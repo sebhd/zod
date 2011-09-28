@@ -64,6 +64,29 @@ void ZMannedObject::ClearDrivers() {
 	ResetDamageInfo();
 }
 
+void ZMannedObject::CreateTeamData(char *&data, int &size) {
+
+	object_team_packet packet_header;
+
+	size = sizeof(object_team_packet) + (driver_info.size() * sizeof(driver_info_s));
+	data = (char*) malloc(size);
+
+	packet_header.ref_id = ref_id;
+	packet_header.owner = owner;
+	packet_header.driver_type = driver_type;
+	packet_header.driver_amount = driver_info.size();
+
+	memcpy(data, &packet_header, sizeof(object_team_packet));
+
+	int shift_amt = sizeof(object_team_packet);
+	for (vector<driver_info_s>::iterator i = driver_info.begin(); i != driver_info.end(); i++) {
+		memcpy(data + shift_amt, &(*i), sizeof(driver_info_s));
+		shift_amt += sizeof(driver_info_s);
+	}
+
+}
+
+
 int ZMannedObject::DamageDriverHealth(int damage_amount) {
 
 	if (!driver_info.size()) {

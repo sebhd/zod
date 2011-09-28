@@ -3,8 +3,7 @@
 
 using namespace COMMON;
 
-ZClient::ZClient() :
-		ZCore() {
+ZClient::ZClient() : ZCore() {
 	remote_address = "localhost";
 	player_name = "nameless_player";
 	our_team = NULL_TEAM;
@@ -165,8 +164,7 @@ void ZClient::RequestPlayerList() {
 }
 
 void ZClient::SendBotBypassData() {
-	if (bot_bypass_size < 1 || bot_bypass_size > MAX_BOT_BYPASS_SIZE)
-	{
+	if (bot_bypass_size < 1 || bot_bypass_size > MAX_BOT_BYPASS_SIZE) {
 		printf("ZClient::SendBotBypassData:: invalid bot_bypass_size\n");
 		return;
 	}
@@ -189,167 +187,24 @@ void ZClient::DeleteObjectCleanUp(ZObject *obj) {
 }
 
 ZObject* ZClient::ProcessNewObject(char *data, int size) {
+
 	object_init_packet *o = (object_init_packet*) data;
 
 	//good packet?
-	if (size != sizeof(object_init_packet))
+	if (size != sizeof(object_init_packet)) {
 		return NULL;
+	}
 
 	//this a ok creation?
-	if (!CreateObjectOk(o->object_type, o->object_id, o->x, o->y, o->owner, o->blevel, o->extra_links))
+	if (!CreateObjectOk(o->object_type, o->object_id, o->x, o->y, o->owner, o->blevel, o->extra_links)) {
 		return NULL;
-
-	ZObject *new_object_ptr = NULL;
-
-	switch (o->object_type) {
-	case BUILDING_OBJECT:
-		switch (o->object_id) {
-		case FORT_FRONT:
-			new_object_ptr = new BFort(&ztime, &zsettings, (planet_type) zmap.GetMapBasics().terrain_type, true);
-			break;
-		case FORT_BACK:
-			new_object_ptr = new BFort(&ztime, &zsettings, (planet_type) zmap.GetMapBasics().terrain_type, false);
-			break;
-		case RADAR:
-			new_object_ptr = new BRadar(&ztime, &zsettings, (planet_type) zmap.GetMapBasics().terrain_type);
-			break;
-		case REPAIR:
-			new_object_ptr = new BRepair(&ztime, &zsettings, (planet_type) zmap.GetMapBasics().terrain_type);
-			break;
-		case ROBOT_FACTORY:
-			new_object_ptr = new BRobot(&ztime, &zsettings, (planet_type) zmap.GetMapBasics().terrain_type);
-			break;
-		case VEHICLE_FACTORY:
-			new_object_ptr = new BVehicle(&ztime, &zsettings, (planet_type) zmap.GetMapBasics().terrain_type);
-			break;
-		case BRIDGE_VERT:
-			new_object_ptr = new BBridge(&ztime, &zsettings, (planet_type) zmap.GetMapBasics().terrain_type, true,
-					o->extra_links);
-			break;
-		case BRIDGE_HORZ:
-			new_object_ptr = new BBridge(&ztime, &zsettings, (planet_type) zmap.GetMapBasics().terrain_type, false,
-					o->extra_links);
-			break;
-		}
-		break;
-	case CANNON_OBJECT:
-		switch (o->object_id) {
-		case GATLING:
-			new_object_ptr = new CGatling(&ztime, &zsettings, our_team == o->owner);
-			break;
-		case GUN:
-			new_object_ptr = new CGun(&ztime, &zsettings, our_team == o->owner);
-			break;
-		case HOWITZER:
-			new_object_ptr = new CHowitzer(&ztime, &zsettings, our_team == o->owner);
-			break;
-		case MISSILE_CANNON:
-			new_object_ptr = new CMissileCannon(&ztime, &zsettings, our_team == o->owner);
-			break;
-		}
-		break;
-	case VEHICLE_OBJECT:
-		switch (o->object_id) {
-		case JEEP:
-			new_object_ptr = new VJeep(&ztime, &zsettings);
-			break;
-		case LIGHT:
-			new_object_ptr = new VLight(&ztime, &zsettings);
-			break;
-		case MEDIUM:
-			new_object_ptr = new VMedium(&ztime, &zsettings);
-			break;
-		case HEAVY:
-			new_object_ptr = new VHeavy(&ztime, &zsettings);
-			break;
-		case APC:
-			new_object_ptr = new VAPC(&ztime, &zsettings);
-			break;
-		case MISSILE_LAUNCHER:
-			new_object_ptr = new VMissileLauncher(&ztime, &zsettings);
-			break;
-		case CRANE:
-			new_object_ptr = new VCrane(&ztime, &zsettings);
-			break;
-		}
-
-		//for fun
-		if (new_object_ptr)
-			new_object_ptr->SetDirection(rand() % MAX_ANGLE_TYPES);
-		break;
-	case ROBOT_OBJECT:
-		switch (o->object_id) {
-		case GRUNT:
-			new_object_ptr = new RGrunt(&ztime, &zsettings);
-			break;
-		case PSYCHO:
-			new_object_ptr = new RPsycho(&ztime, &zsettings);
-			break;
-		case SNIPER:
-			new_object_ptr = new RSniper(&ztime, &zsettings);
-			break;
-		case TOUGH:
-			new_object_ptr = new RTough(&ztime, &zsettings);
-			break;
-		case PYRO:
-			new_object_ptr = new RPyro(&ztime, &zsettings);
-			break;
-		case LASER:
-			new_object_ptr = new RLaser(&ztime, &zsettings);
-			break;
-		}
-		break;
-	case MAP_ITEM_OBJECT:
-		switch (o->object_id) {
-		case FLAG_ITEM:
-			new_object_ptr = new OFlag(&ztime, &zsettings);
-			break;
-		case ROCK_ITEM:
-			new_object_ptr = new ORock(&ztime, &zsettings, (planet_type) zmap.GetMapBasics().terrain_type);
-			break;
-		case GRENADES_ITEM:
-			new_object_ptr = new OGrenades(&ztime, &zsettings);
-			break;
-		case ROCKETS_ITEM:
-			new_object_ptr = new ORockets(&ztime, &zsettings);
-			break;
-		case HUT_ITEM:
-			new_object_ptr = new OHut(&ztime, &zsettings, (planet_type) zmap.GetMapBasics().terrain_type);
-			break;
-		}
-
-		if (o->object_id >= MAP0_ITEM && o->object_id <= MAP21_ITEM)
-			new_object_ptr = new OMapObject(&ztime, &zsettings, o->object_id);
-
-		break;
 	}
 
-	if (new_object_ptr) {
-		new_object_ptr->SetOwner((team_type) o->owner);
-		new_object_ptr->SetCords(o->x, o->y);
-		new_object_ptr->SetRefID(o->ref_id);
-		new_object_ptr->SetBuildList(&buildlist);
-		new_object_ptr->SetConnectedZone(zmap);
-		new_object_ptr->SetUnitLimitReachedList(unit_limit_reached);
-		new_object_ptr->SetLevel(o->blevel);
+	bool setOwner = (our_team == o->owner);
 
-		ZMannedObject* manned = dynamic_cast<ZMannedObject*>(new_object_ptr);
-
-		if (manned) {
-			manned->SetInitialDrivers();
-		}
-
-		new_object_ptr->SetMap(&zmap);
-		new_object_ptr->SetMapImpassables(zmap);
-
-		//object_list.push_back(new_object_ptr);
-		ols.AddObject(new_object_ptr);
-
-		//   	printf("object added to game:%s of %s\n", new_object_ptr->GetObjectName().c_str(), team_type_string[o->owner].c_str());
-	}
-
-	return new_object_ptr;
+	return MakeNewObject(100, o->blevel, o->ref_id, o->x, o->y, o->owner, o->object_type, o->object_id, o->extra_links, setOwner, NULL);
 }
+
 
 void ZClient::ProcessZoneInfo(char *data, int size) {
 	zone_info_packet *pi = (zone_info_packet*) data;
@@ -400,7 +255,7 @@ ZObject* ZClient::ProcessObjectTeam(char *data, int size) {
 		return NULL;
 	}
 
-	ZObject* obj = GetObjectFromID(pi->ref_id, object_list);
+	ZObject* obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj) {
 		return NULL;
@@ -439,8 +294,8 @@ ZObject* ZClient::ProcessObjectAttackObject(char *data, int size) {
 	if (size != sizeof(attack_object_packet))
 		return NULL;
 
-	obj = GetObjectFromID(pi->ref_id, object_list);
-	attack_obj = GetObjectFromID(pi->attack_object_ref_id, object_list);
+	obj = GetObjectFromID(pi->ref_id);
+	attack_obj = GetObjectFromID(pi->attack_object_ref_id);
 
 	if (!obj)
 		return NULL;
@@ -459,7 +314,7 @@ ZObject* ZClient::ProcessDeleteObject(char *data, int size) {
 
 	ref_id = *(int*) data;
 
-	obj = GetObjectFromID(ref_id, object_list);
+	obj = GetObjectFromID(ref_id);
 
 	if (!obj)
 		return NULL;
@@ -476,12 +331,11 @@ ZObject* ZClient::ProcessDeleteObject(char *data, int size) {
 ZObject* ZClient::ProcessObjectHealthTeam(char *data, int size) {
 	object_health_packet *pi = (object_health_packet*) data;
 
-
 	//good packet?
 	if (size != sizeof(object_health_packet))
 		return NULL;
 
-	ZObject *obj = GetObjectFromID(pi->ref_id, object_list);
+	ZObject *obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj)
 		return NULL;
@@ -499,7 +353,7 @@ ZObject* ZClient::ProcessFireMissile(char *data, int size) {
 	if (size != sizeof(fire_missile_packet))
 		return NULL;
 
-	obj = GetObjectFromID(pi->ref_id, object_list);
+	obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj)
 		return NULL;
@@ -520,7 +374,7 @@ ZObject* ZClient::ProcessObjectLoc(char *data, int size) {
 	ref_id = ((int*) data)[0];
 	memcpy(&new_loc, data + 4, sizeof(object_location));
 
-	obj = GetObjectFromID(ref_id, object_list);
+	obj = GetObjectFromID(ref_id);
 
 	if (!obj)
 		return NULL;
@@ -538,7 +392,7 @@ ZObject* ZClient::ProcessBuildingState(char *data, int size) {
 	if (size != sizeof(set_building_state_packet))
 		return NULL;
 
-	obj = GetObjectFromID(pi->ref_id, object_list);
+	obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj)
 		return NULL;
@@ -559,7 +413,7 @@ ZObject* ZClient::ProcessBuildingQueueList(char *data, int size) {
 	//get header
 	ref_id = ((int*) data)[0];
 
-	obj = GetObjectFromID(ref_id, object_list);
+	obj = GetObjectFromID(ref_id);
 
 	if (!obj)
 		return NULL;
@@ -579,7 +433,7 @@ ZObject* ZClient::ProcessBuildingCannonList(char *data, int size) {
 
 	ref_id = *(int*) (data);
 
-	obj = GetObjectFromID(ref_id, object_list);
+	obj = GetObjectFromID(ref_id);
 
 	if (!obj)
 		return NULL;
@@ -597,7 +451,7 @@ ZObject* ZClient::ProcessObjectGroupInfo(char *data, int size) {
 
 	int ref_id = *(int*) data;
 
-	ZObject* obj = GetObjectFromID(ref_id, object_list);
+	ZObject* obj = GetObjectFromID(ref_id);
 
 	if (!obj)
 		return NULL;
@@ -615,7 +469,7 @@ ZObject* ZClient::ProcessObjectLidState(char *data, int size) {
 	if (size != sizeof(set_lid_state_packet))
 		return NULL;
 
-	obj = GetObjectFromID(pi->ref_id, object_list);
+	obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj)
 		return NULL;
@@ -637,7 +491,7 @@ ZObject* ZClient::ProcessSetGrenadeState(char *data, int size) {
 	if (size != sizeof(obj_grenade_amount_packet))
 		return NULL;
 
-	obj = GetObjectFromID(pi->ref_id, object_list);
+	obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj)
 		return NULL;
@@ -957,63 +811,63 @@ void ZClient::SetupEHandler() {
 	eventHandler.SetParent(this);
 
 	// TCP Events:
-	eventHandler.AddFunction(TCP_EVENT, DEBUG_EVENT_, test_event);
-	eventHandler.AddFunction(TCP_EVENT, STORE_MAP, store_map_event);
-	eventHandler.AddFunction(TCP_EVENT, ADD_NEW_OBJECT, add_new_object_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_ZONE_INFO, set_zone_info_event);
-	eventHandler.AddFunction(TCP_EVENT, NEWS_EVENT, display_news_event);
-	eventHandler.AddFunction(TCP_EVENT, SEND_WAYPOINTS, set_object_waypoints_event);
-	eventHandler.AddFunction(TCP_EVENT, SEND_RALLYPOINTS, set_object_rallypoints_event);
-	eventHandler.AddFunction(TCP_EVENT, SEND_LOC, set_object_loc_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_OBJECT_TEAM, set_object_team_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_ATTACK_OBJECT, set_object_attack_object_event);
-	eventHandler.AddFunction(TCP_EVENT, DELETE_OBJECT, delete_object_event);
-	eventHandler.AddFunction(TCP_EVENT, UPDATE_HEALTH, set_object_health_event);
-	eventHandler.AddFunction(TCP_EVENT, END_GAME, end_game_event);
-	eventHandler.AddFunction(TCP_EVENT, RESET_GAME, reset_game_event);
-	eventHandler.AddFunction(TCP_EVENT, FIRE_MISSILE, fire_object_missile_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_EXPERIENCE, set_object_experience_event);
+	eventHandler.AddFunction(TCP_EVENT, DEBUG_EVENT_, handle_test_event);
+	eventHandler.AddFunction(TCP_EVENT, STORE_MAP, handle_store_map_event);
+	eventHandler.AddFunction(TCP_EVENT, ADD_NEW_OBJECT, handle_add_new_object_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_ZONE_INFO, handle_set_zone_info_event);
+	eventHandler.AddFunction(TCP_EVENT, NEWS_EVENT, handle_display_news_event);
+	eventHandler.AddFunction(TCP_EVENT, SEND_WAYPOINTS, handle_set_object_waypoints_event);
+	eventHandler.AddFunction(TCP_EVENT, SEND_RALLYPOINTS, handle_set_object_rallypoints_event);
+	eventHandler.AddFunction(TCP_EVENT, SEND_LOC, handle_set_object_loc_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_OBJECT_TEAM, handle_set_object_team_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_ATTACK_OBJECT, handle_set_object_attack_object_event);
+	eventHandler.AddFunction(TCP_EVENT, DELETE_OBJECT, handle_delete_object_event);
+	eventHandler.AddFunction(TCP_EVENT, UPDATE_HEALTH, handle_set_object_health_event);
+	eventHandler.AddFunction(TCP_EVENT, END_GAME, handle_end_game_event);
+	eventHandler.AddFunction(TCP_EVENT, RESET_GAME, handle_reset_game_event);
+	eventHandler.AddFunction(TCP_EVENT, FIRE_MISSILE, handle_fire_object_missile_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_EXPERIENCE, handle_set_object_experience_event);
 //	eventHandler.AddFunction(TCP_EVENT, SET_LEADER, set_leader_event);
-	eventHandler.AddFunction(TCP_EVENT, DESTROY_OBJECT, destroy_object_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_BUILDING_STATE, set_building_state_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_BUILT_CANNON_AMOUNT, set_building_cannon_list_event);
-	eventHandler.AddFunction(TCP_EVENT, COMP_MSG, set_computer_message_event);
-	eventHandler.AddFunction(TCP_EVENT, OBJECT_GROUP_INFO, set_object_group_info_event);
-	eventHandler.AddFunction(TCP_EVENT, DO_CRANE_ANIM, do_crane_anim_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_REPAIR_ANIM, set_repair_building_anim_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_SETTINGS, set_settings_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_LID_OPEN, set_lid_open_event);
-	eventHandler.AddFunction(TCP_EVENT, SNIPE_OBJECT, snipe_object_event);
-	eventHandler.AddFunction(TCP_EVENT, DRIVER_HIT_EFFECT, driver_hit_effect_event);
-	eventHandler.AddFunction(TCP_EVENT, CLEAR_PLAYER_LIST, clear_player_list_event);
-	eventHandler.AddFunction(TCP_EVENT, ADD_LPLAYER, add_player_event);
-	eventHandler.AddFunction(TCP_EVENT, DELETE_LPLAYER, delete_player_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_LPLAYER_NAME, set_player_name_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_LPLAYER_TEAM, set_player_team_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_LPLAYER_MODE, set_player_mode_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_LPLAYER_IGNORED, set_player_ignored_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_LPLAYER_LOGINFO, set_player_loginfo_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_LPLAYER_VOTEINFO, set_player_voteinfo_event);
-	eventHandler.AddFunction(TCP_EVENT, UPDATE_GAME_PAUSED, update_game_paused_event);
-	eventHandler.AddFunction(TCP_EVENT, UPDATE_GAME_SPEED, update_game_speed_event);
-	eventHandler.AddFunction(TCP_EVENT, VOTE_INFO, set_vote_info_event);
-	eventHandler.AddFunction(TCP_EVENT, GIVE_PLAYER_ID, set_player_id_event);
-	eventHandler.AddFunction(TCP_EVENT, GIVE_SELECTABLE_MAP_LIST, set_selectable_map_list_event);
-	eventHandler.AddFunction(TCP_EVENT, GIVE_LOGINOFF, display_login_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_GRENADE_AMOUNT, set_grenade_amount_event);
-	eventHandler.AddFunction(TCP_EVENT, PICKUP_GRENADE_ANIM, pickup_grenade_event);
-	eventHandler.AddFunction(TCP_EVENT, DO_PORTRAIT_ANIM, do_portrait_anim_event);
-	eventHandler.AddFunction(TCP_EVENT, TEAM_ENDED, team_ended_event);
-	eventHandler.AddFunction(TCP_EVENT, SET_TEAM, set_team_event);
-	eventHandler.AddFunction(TCP_EVENT, POLL_BUY_REGKEY, poll_buy_regkey_event);
-	eventHandler.AddFunction(TCP_EVENT, RETURN_REGKEY, set_regkey);
-	eventHandler.AddFunction(TCP_EVENT, SET_BUILDING_QUEUE_LIST, set_build_queue_list_event);
-	eventHandler.AddFunction(TCP_EVENT, REQUEST_VERSION, request_version_event);
-	eventHandler.AddFunction(TCP_EVENT, GIVE_VERSION, get_version_event);
+	eventHandler.AddFunction(TCP_EVENT, DESTROY_OBJECT, handle_destroy_object_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_BUILDING_STATE, handle_set_building_state_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_BUILT_CANNON_AMOUNT, handle_set_building_cannon_list_event);
+	eventHandler.AddFunction(TCP_EVENT, COMP_MSG, handle_set_computer_message_event);
+	eventHandler.AddFunction(TCP_EVENT, OBJECT_GROUP_INFO, handle_set_object_group_info_event);
+	eventHandler.AddFunction(TCP_EVENT, DO_CRANE_ANIM, handle_do_crane_anim_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_REPAIR_ANIM, handle_set_repair_building_anim_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_SETTINGS, handle_set_settings_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_LID_OPEN, handle_set_lid_open_event);
+	eventHandler.AddFunction(TCP_EVENT, SNIPE_OBJECT, handle_snipe_object_event);
+	eventHandler.AddFunction(TCP_EVENT, DRIVER_HIT_EFFECT, handle_driver_hit_effect_event);
+	eventHandler.AddFunction(TCP_EVENT, CLEAR_PLAYER_LIST, handle_clear_player_list_event);
+	eventHandler.AddFunction(TCP_EVENT, ADD_LPLAYER, handle_add_player_event);
+	eventHandler.AddFunction(TCP_EVENT, DELETE_LPLAYER, handle_delete_player_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_LPLAYER_NAME, handle_set_player_name_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_LPLAYER_TEAM, handle_set_player_team_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_LPLAYER_MODE, handle_set_player_mode_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_LPLAYER_IGNORED, handle_set_player_ignored_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_LPLAYER_LOGINFO, handle_set_player_loginfo_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_LPLAYER_VOTEINFO, handle_set_player_voteinfo_event);
+	eventHandler.AddFunction(TCP_EVENT, UPDATE_GAME_PAUSED, handle_update_game_paused_event);
+	eventHandler.AddFunction(TCP_EVENT, UPDATE_GAME_SPEED, handle_update_game_speed_event);
+	eventHandler.AddFunction(TCP_EVENT, VOTE_INFO, handle_set_vote_info_event);
+	eventHandler.AddFunction(TCP_EVENT, GIVE_PLAYER_ID, handle_set_player_id_event);
+	eventHandler.AddFunction(TCP_EVENT, GIVE_SELECTABLE_MAP_LIST, handle_set_selectable_map_list_event);
+	eventHandler.AddFunction(TCP_EVENT, GIVE_LOGINOFF, handle_display_login_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_GRENADE_AMOUNT, handle_set_grenade_amount_event);
+	eventHandler.AddFunction(TCP_EVENT, PICKUP_GRENADE_ANIM, handle_pickup_grenade_event);
+	eventHandler.AddFunction(TCP_EVENT, DO_PORTRAIT_ANIM, handle_do_portrait_anim_event);
+	eventHandler.AddFunction(TCP_EVENT, TEAM_ENDED, handle_team_ended_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_TEAM, handle_set_team_event);
+	eventHandler.AddFunction(TCP_EVENT, POLL_BUY_REGKEY, handle_poll_buy_regkey_event);
+	eventHandler.AddFunction(TCP_EVENT, RETURN_REGKEY, handle_set_regkey_event);
+	eventHandler.AddFunction(TCP_EVENT, SET_BUILDING_QUEUE_LIST, handle_set_build_queue_list_event);
+	eventHandler.AddFunction(TCP_EVENT, REQUEST_VERSION, handle_request_version_event);
+	eventHandler.AddFunction(TCP_EVENT, GIVE_VERSION, handle_get_version_event);
 
 	// Other Events:
-	eventHandler.AddFunction(OTHER_EVENT, CONNECT_EVENT, connect_event);
-	eventHandler.AddFunction(OTHER_EVENT, DISCONNECT_EVENT, disconnect_event);
+	eventHandler.AddFunction(OTHER_EVENT, CONNECT_EVENT, handle_connect_event);
+	eventHandler.AddFunction(OTHER_EVENT, DISCONNECT_EVENT, handle_disconnect_event);
 
 	// SDL Events:
 	eventHandler.AddFunction(SDL_EVENT, RESIZE_EVENT, resize_event);
@@ -1074,232 +928,225 @@ void ZClient::motion_event(ZClient *p, char *data, int size, int dummy) {
 
 //################# BEGIN Static TCP Event handler wrappers ########################
 
-void ZClient::add_new_object_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_add_new_object_event(ZClient *p, char *data, int size, int dummy) {
 	p->add_new_object_event(data, size, dummy);
 }
 
-void ZClient::add_player_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_add_player_event(ZClient *p, char *data, int size, int dummy) {
 	p->add_player_event(data, size, dummy);
 }
 
-void ZClient::clear_player_list_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_clear_player_list_event(ZClient *p, char *data, int size, int dummy) {
 	p->clear_player_list_event(data, size, dummy);
 }
 
-void ZClient::connect_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_connect_event(ZClient *p, char *data, int size, int dummy) {
 	p->connect_event(data, size, dummy);
 }
 
-void ZClient::delete_object_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_delete_object_event(ZClient *p, char *data, int size, int dummy) {
 	p->delete_object_event(data, size, dummy);
 }
 
-void ZClient::delete_player_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_delete_player_event(ZClient *p, char *data, int size, int dummy) {
 	p->delete_player_event(data, size, dummy);
 }
 
-void ZClient::destroy_object_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_destroy_object_event(ZClient *p, char *data, int size, int dummy) {
 	p->destroy_object_event(data, size, dummy);
 }
 
-void ZClient::disconnect_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_disconnect_event(ZClient *p, char *data, int size, int dummy) {
 	p->disconnect_event(data, size, dummy);
 }
 
-void ZClient::display_login_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_display_login_event(ZClient *p, char *data, int size, int dummy) {
 	p->display_login_event(data, size, dummy);
 }
 
-void ZClient::display_news_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_display_news_event(ZClient *p, char *data, int size, int dummy) {
 	p->display_news_event(data, size, dummy);
 }
 
-void ZClient::do_crane_anim_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_do_crane_anim_event(ZClient *p, char *data, int size, int dummy) {
 	p->do_crane_anim_event(data, size, dummy);
 }
 
-void ZClient::do_portrait_anim_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_do_portrait_anim_event(ZClient *p, char *data, int size, int dummy) {
 	p->do_portrait_anim_event(data, size, dummy);
 }
 
-void ZClient::driver_hit_effect_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_driver_hit_effect_event(ZClient *p, char *data, int size, int dummy) {
 	p->driver_hit_effect_event(data, size, dummy);
 }
 
-void ZClient::end_game_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_end_game_event(ZClient *p, char *data, int size, int dummy) {
 	p->end_game_event(data, size, dummy);
 }
 
-void ZClient::fire_object_missile_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_fire_object_missile_event(ZClient *p, char *data, int size, int dummy) {
 	p->fire_object_missile_event(data, size, dummy);
 }
 
-void ZClient::get_version_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_get_version_event(ZClient *p, char *data, int size, int dummy) {
 	p->get_version_event(data, size, dummy);
 }
 
 
-//		void ZClient::nothing_event(ZBot *p, char *data, int size, int dummy);
-void ZClient::pickup_grenade_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_pickup_grenade_event(ZClient *p, char *data, int size, int dummy) {
 	p->pickup_grenade_event(data, size, dummy);
 }
 
 
-// TODO 4: 'event' prefix?
-void ZClient::poll_buy_regkey_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_poll_buy_regkey_event(ZClient *p, char *data, int size, int dummy) {
 	p->poll_buy_regkey(data, size, dummy);
 }
 
-void ZClient::request_version_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_request_version_event(ZClient *p, char *data, int size, int dummy) {
 	p->request_version_event(data, size, dummy);
 }
 
-void ZClient::reset_game_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_reset_game_event(ZClient *p, char *data, int size, int dummy) {
 	p->reset_game_event(data, size, dummy);
 }
 
-void ZClient::set_build_queue_list_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_build_queue_list_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_build_queue_list_event(data, size, dummy);
 }
 
-void ZClient::set_building_cannon_list_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_building_cannon_list_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_building_cannon_list_event(data, size, dummy);
 }
 
-void ZClient::set_building_state_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_building_state_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_building_state_event(data, size, dummy);
 }
 
-void ZClient::set_computer_message_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_computer_message_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_computer_message_event(data, size, dummy);
 }
 
-void ZClient::set_object_experience_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_object_experience_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_object_experience_event(data, size, dummy);
 }
 
-void ZClient::set_grenade_amount_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_grenade_amount_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_grenade_amount_event(data, size, dummy);
 }
-/*
-void ZClient::set_leader_event(ZClient *p, char *data, int size, int dummy) {
-	p->set_leader_event(data, size, dummy);
-}
-*/
-void ZClient::set_lid_open_event(ZClient *p, char *data, int size, int dummy) {
+
+void ZClient::handle_set_lid_open_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_lid_open_event(data, size, dummy);
 }
 
-void ZClient::set_object_attack_object_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_object_attack_object_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_object_attack_object_event(data, size, dummy);
 }
 
-void ZClient::set_object_group_info_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_object_group_info_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_object_group_info_event(data, size, dummy);
 }
 
-void ZClient::set_object_health_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_object_health_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_object_health_event(data, size, dummy);
 }
 
-void ZClient::set_object_loc_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_object_loc_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_object_loc_event(data, size, dummy);
 }
 
-void ZClient::set_object_rallypoints_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_object_rallypoints_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_object_rallypoints_event(data, size, dummy);
 }
 
-void ZClient::set_object_team_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_object_team_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_object_team_event(data, size, dummy);
 }
 
-void ZClient::set_object_waypoints_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_object_waypoints_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_object_waypoints_event(data, size, dummy);
 }
 
-void ZClient::set_player_id_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_player_id_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_player_id_event(data, size, dummy);
 }
 
-void ZClient::set_player_ignored_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_player_ignored_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_player_ignored_event(data, size, dummy);
 }
 
-void ZClient::set_player_loginfo_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_player_loginfo_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_player_loginfo_event(data, size, dummy);
 }
 
-void ZClient::set_player_mode_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_player_mode_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_player_mode_event(data, size, dummy);
 }
 
-void ZClient::set_player_name_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_player_name_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_player_name_event(data, size, dummy);
 }
 
-void ZClient::set_player_team_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_player_team_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_player_team_event(data, size, dummy);
 }
 
-void ZClient::set_player_voteinfo_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_player_voteinfo_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_player_voteinfo_event(data, size, dummy);
 }
 
-void ZClient::set_regkey(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_regkey_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_regkey(data, size, dummy);
 }
 
-void ZClient::set_repair_building_anim_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_repair_building_anim_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_repair_building_anim_event(data, size, dummy);
 }
 
-void ZClient::set_selectable_map_list_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_selectable_map_list_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_selectable_map_list_event(data, size, dummy);
 }
 
-void ZClient::set_settings_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_settings_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_settings_event(data, size, dummy);
 }
 
-void ZClient::set_team_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_team_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_team_event(data, size, dummy);
 }
 
-void ZClient::set_vote_info_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_vote_info_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_vote_info_event(data, size, dummy);
 }
 
-void ZClient::set_zone_info_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_set_zone_info_event(ZClient *p, char *data, int size, int dummy) {
 	p->set_zone_info_event(data, size, dummy);
 }
 
-void ZClient::snipe_object_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_snipe_object_event(ZClient *p, char *data, int size, int dummy) {
 	p->snipe_object_event(data, size, dummy);
 }
 
-void ZClient::store_map_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_store_map_event(ZClient *p, char *data, int size, int dummy) {
 	p->store_map_event(data, size, dummy);
 }
 
-void ZClient::team_ended_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_team_ended_event(ZClient *p, char *data, int size, int dummy) {
 	p->team_ended_event(data, size, dummy);
 }
 
-void ZClient::test_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_test_event(ZClient *p, char *data, int size, int dummy) {
 	p->test_event(data, size, dummy);
 }
 
-void ZClient::update_game_paused_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_update_game_paused_event(ZClient *p, char *data, int size, int dummy) {
 	p->update_game_paused_event(data, size, dummy);
 }
 
-void ZClient::update_game_speed_event(ZClient *p, char *data, int size, int dummy) {
+void ZClient::handle_update_game_speed_event(ZClient *p, char *data, int size, int dummy) {
 	p->update_game_speed_event(data, size, dummy);
 }
 
 //################# END Static TCP Event handler wrappers ########################
-
 
 
 
@@ -1319,6 +1166,17 @@ void ZClient::connect_event(char *data, int size, int dummy) {
 }
 
 void ZClient::delete_object_event(char *data, int size, int dummy) {
+	ZObject *obj = ProcessDeleteObject(data, size);
+
+		if (!obj) {
+			return;
+		}
+
+		// TODO 1: This loop was originally in ZBot::delete_object_event only. Is is correct for ZPlayer too?
+		// (This method was merged from ZBot and ZPlayer. The only difference was this loop)
+		for (vector<ZObject*>::iterator i = object_list.begin(); i != object_list.end(); i++) {
+			(*i)->RemoveObject(obj);
+		}
 }
 
 void ZClient::delete_player_event(char *data, int size, int dummy) {
@@ -1392,7 +1250,7 @@ void ZClient::set_object_experience_event(char *data, int size, int dummy) {
 		return;
 	}
 
-	ZObject* obj = GetObjectFromID(pi->ref_id, object_list);
+	ZObject* obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj) {
 		return;
@@ -1404,7 +1262,6 @@ void ZClient::set_object_experience_event(char *data, int size, int dummy) {
 
 void ZClient::set_grenade_amount_event(char *data, int size, int dummy) {
 }
-
 
 void ZClient::set_lid_open_event(char *data, int size, int dummy) {
 	ProcessObjectLidState(data, size);
@@ -1472,6 +1329,7 @@ void ZClient::set_selectable_map_list_event(char *data, int size, int dummy) {
 }
 
 void ZClient::set_settings_event(char *data, int size, int dummy) {
+	ProcessZSettings(data, size);
 }
 
 void ZClient::set_team_event(char *data, int size, int dummy) {

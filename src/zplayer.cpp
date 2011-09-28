@@ -3204,7 +3204,7 @@ bool ZPlayer::GuiAbsorbLClick() {
 
 			if (gui_factory_list->GetGFlags().jump_to_building) {
 
-				ZObject* obj = GetObjectFromID(gui_factory_list->GetGFlags().bref_id, object_list);
+				ZObject* obj = GetObjectFromID(gui_factory_list->GetGFlags().bref_id);
 
 				if (obj) {
 
@@ -3829,7 +3829,7 @@ void ZPlayer::DoSpaceBarEvent() {
 		process_event = space_event_list[0];
 
 		//get object
-		obj = GetObjectFromID(process_event.ref_id, object_list);
+		obj = GetObjectFromID(process_event.ref_id);
 
 		//if not good any more, delete this event and try again
 		if (!obj || process_event.past_lifetime()) {
@@ -3909,9 +3909,9 @@ void ZPlayer::add_new_object_event(char *data, int size, int dummy) {
 			FocusCameraToFort();
 		}
 
-		//if(ot == MAP_ITEM_OBJECT && oid == ROCK_ITEM) ORock::SetupRockRenders(zmap, object_list);
-		if (ot == MAP_ITEM_OBJECT && oid == ROCK_ITEM)
+		if (ot == MAP_ITEM_OBJECT && oid == ROCK_ITEM) {
 			ORock::EditRockRender(zmap, object_list, obj, true);
+		}
 
 		obj->CreationMapEffects(zmap);
 
@@ -3931,10 +3931,11 @@ void ZPlayer::connect_event(char *data, int size, int dummy) {
 	SendLogin();
 }
 
-
+/*
 void ZPlayer::delete_object_event(char *data, int size, int dummy) {
 	ZObject *obj = ProcessDeleteObject(data, size);
 }
+*/
 
 void ZPlayer::destroy_object_event(char *data, int size, int dummy) {
 	destroy_object_packet *pi = (destroy_object_packet*) data;
@@ -3943,7 +3944,7 @@ void ZPlayer::destroy_object_event(char *data, int size, int dummy) {
 	if (size < sizeof(destroy_object_packet))
 		return;
 
-	ZObject *obj = GetObjectFromID(pi->ref_id, object_list);
+	ZObject *obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj) {
 		return;
@@ -4125,12 +4126,12 @@ void ZPlayer::do_crane_anim_event(char *data, int size, int dummy) {
 	if (size != sizeof(crane_anim_packet))
 		return;
 
-	obj = GetObjectFromID(pi->ref_id, object_list);
+	obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj)
 		return;
 
-	rep_obj = GetObjectFromID(pi->rep_ref_id, object_list);
+	rep_obj = GetObjectFromID(pi->rep_ref_id);
 
 	obj->DoCraneAnim(pi->on, rep_obj);
 }
@@ -4143,7 +4144,7 @@ void ZPlayer::do_portrait_anim_event(char *data, int size, int dummy) {
 	if (size != sizeof(do_portrait_anim_packet))
 		return;
 
-	obj = GetObjectFromID(pi->ref_id, object_list);
+	obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj)
 		return;
@@ -4183,7 +4184,7 @@ void ZPlayer::driver_hit_effect_event(char *data, int size, int dummy) {
 	if (size != sizeof(driver_hit_packet))
 		return;
 
-	obj = GetObjectFromID(pi->ref_id, object_list);
+	obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj)
 		return;
@@ -4423,7 +4424,7 @@ void ZPlayer::lclick_event(char *data, int size, int dummy) {
 			int x, y;
 			ZObject *obj;
 
-			obj = GetObjectFromID(hud_response.jump_ref_id, object_list);
+			obj = GetObjectFromID(hud_response.jump_ref_id);
 
 			if (obj) {
 				obj->GetCenterCords(x, y);
@@ -4469,7 +4470,7 @@ void ZPlayer::lunclick_event(char *data, int size, int dummy) {
 				//client_socket.SendMessage(SET_GAME_PAUSED, (const char*)&packet, sizeof(update_game_paused_packet));
 			} else {
 				ZObject *obj;
-				obj = GetObjectFromID(zcomp_msg.GetFlags().ref_id, object_list);
+				obj = GetObjectFromID(zcomp_msg.GetFlags().ref_id);
 
 				if (obj) {
 					//select it?
@@ -4635,7 +4636,7 @@ void ZPlayer::pickup_grenade_event(char *data, int size, int dummy) {
 	if (size != sizeof(int_packet))
 		return;
 
-	obj = GetObjectFromID(pi->ref_id, object_list);
+	obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj)
 		return;
@@ -4829,8 +4830,6 @@ void ZPlayer::set_grenade_amount_event(char *data, int size, int dummy) {
 }
 
 
-
-
 void ZPlayer::set_object_attack_object_event(char *data, int size, int dummy) {
 	ZObject *obj = ProcessObjectAttackObject(data, size);
 
@@ -4949,7 +4948,7 @@ void ZPlayer::set_repair_building_anim_event(char *data, int size, int dummy) {
 	if (size != sizeof(repair_building_anim_packet))
 		return;
 
-	obj = GetObjectFromID(pi->ref_id, object_list);
+	obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj)
 		return;
@@ -4968,10 +4967,11 @@ void ZPlayer::set_repair_building_anim_event(char *data, int size, int dummy) {
 	}
 }
 
+/*
 void ZPlayer::set_settings_event(char *data, int size, int dummy) {
 	ProcessZSettings(data, size);
 }
-
+*/
 
 void ZPlayer::set_vote_info_event(char *data, int size, int dummy) {
 	ProcessVoteInfo(data, size);
@@ -4994,7 +4994,7 @@ void ZPlayer::snipe_object_event(char *data, int size, int dummy) {
 	if (size != sizeof(snipe_object_packet))
 		return;
 
-	obj = GetObjectFromID(pi->ref_id, object_list);
+	obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj)
 		return;

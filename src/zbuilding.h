@@ -33,6 +33,7 @@ class ZBuilding : public ZObject
 		ZBuilding(ZTime *ztime_, ZSettings *zsettings_ = NULL, planet_type palette_ = DESERT);
 		~ZBuilding();
 		
+		void SetBuildList(ZBuildList *buildlist_);
 		static void Init();
 		virtual void ChangePalette(planet_type palette_);
 		void ReRenderBase();
@@ -85,7 +86,7 @@ class ZBuilding : public ZObject
 		vector<unsigned char> built_cannon_list;
 		float zone_ownage;
 		vector<ZBProductionUnit> queue_list;
-
+		ZBuildList *buildlist;
 		int show_time;
 		ZSDL_Surface show_time_img;
 

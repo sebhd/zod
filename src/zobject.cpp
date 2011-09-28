@@ -10,6 +10,7 @@
 
 // TODO 3: Star ratings are gained by killing other units (whole groups). They are gained by individual groups who get the kill, they’re not allowed to gain any more experience for 10 seconds.
 
+
 #include "zobject.h"
 #include "common.h"
 #include "zfont_engine.h"
@@ -73,7 +74,7 @@ ZObject::ZObject(ZTime *ztime_, ZSettings *zsettings_) {
 	health = max_health;
 	last_wp.mode = -1;
 	next_check_passive_attack_time = 0;
-	buildlist = NULL;
+
 	connected_zone = NULL;
 	unit_limit_reached = NULL;
 	dont_stamp = false;
@@ -930,7 +931,6 @@ void ZObject::SetRefID(int id) {
 	ref_id = id;
 }
 
-// TODO 3: Don't display experience star on empty vehicles
 void ZObject::RenderHover(ZMap &zmap, SDL_Surface *dest, team_type viewers_team) {
 
 	/* ATTENTION: This check is required to prevent a crash when the hover name is not set. In this case,
@@ -3810,6 +3810,9 @@ void ZObject::RecalcDirection() {
 		direction = new_dir;
 }
 
+// TODO 4: Remove this and user ZCore::GetObjectFromID instead
+
+/*
 ZObject* ZObject::GetObjectFromID_BS(int ref_id_, vector<ZObject*> &the_list) {
 	int low, high, midpoint;
 
@@ -3840,17 +3843,39 @@ ZObject* ZObject::GetObjectFromID_BS(int ref_id_, vector<ZObject*> &the_list) {
 
 	return NULL;
 }
+*/
 
+// TODO 4: REFACTOR: Remove this from here and user ZCore::GetObjectFromID() instead
 ZObject* ZObject::GetObjectFromID(int ref_id_, vector<ZObject*> &the_list) {
-	vector<ZObject*>::iterator obj;
 
-	return GetObjectFromID_BS(ref_id_, the_list);
+	int low, high, midpoint;
 
-	//for(obj=the_list.begin(); obj!=the_list.end();obj++)
-	//	if((*obj)->ref_id == ref_id_)
-	//		return *obj;
+		low = 0;
+		high = the_list.size() - 1;
+		midpoint = 0;
 
-	//return NULL;
+		//printf("ref id list: ");
+		//for(vector<ZObject*>::iterator obj=the_list.begin(); obj!=the_list.end();obj++)
+		//	printf("%d, ", (*obj)->GetRefID());
+		//printf("\n");
+
+		while (low <= high) {
+			int tref_id;
+
+			//midpoint = low + ((high - low) / 2);
+			midpoint = low + ((high - low) >> 1);
+
+			tref_id = the_list[midpoint]->GetRefID();
+
+			if (ref_id_ == tref_id)
+				return the_list[midpoint];
+			else if (ref_id_ < tref_id)
+				high = midpoint - 1;
+			else
+				low = midpoint + 1;
+		}
+
+		return NULL;
 }
 
 void ZObject::SetAttackObject(ZObject *obj) {
@@ -4067,9 +4092,7 @@ void ZObject::ResetProduction() {
 
 }
 
-void ZObject::SetBuildList(ZBuildList *buildlist_) {
-	buildlist = buildlist_;
-}
+
 
 bool ZObject::StoreBuiltCannon(unsigned char oid) {
 	return false;
@@ -4312,27 +4335,19 @@ void ZObject::CreateGroupInfoData(char *&data, int &size) {
 	}
 }
 
-// ATTENTION: Moving this to ZMannedObject causes problems!!!
+
 void ZObject::CreateTeamData(char *&data, int &size) {
 
 	object_team_packet packet_header;
 
-	size = sizeof(object_team_packet) + (driver_info.size() * sizeof(driver_info_s));
+	size = sizeof(object_team_packet);// + (driver_info.size() * sizeof(driver_info_s));
 	data = (char*) malloc(size);
 
 	packet_header.ref_id = ref_id;
 	packet_header.owner = owner;
-	packet_header.driver_type = driver_type;
-	packet_header.driver_amount = driver_info.size();
+	packet_header.driver_amount = 0;
 
 	memcpy(data, &packet_header, sizeof(object_team_packet));
-
-	int shift_amt = sizeof(object_team_packet);
-	for (vector<driver_info_s>::iterator i = driver_info.begin(); i != driver_info.end(); i++) {
-		memcpy(data + shift_amt, &(*i), sizeof(driver_info_s));
-		shift_amt += sizeof(driver_info_s);
-	}
-
 }
 
 void ZObject::ProcessGroupInfoData(char *data, int size, vector<ZObject*> &object_list) {

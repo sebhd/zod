@@ -493,7 +493,10 @@ void ZHud::ProcessA(double the_time, vector<ZObject*> &object_list) {
 
 	ZObject *obj;
 
+
 	obj = ZObject::GetObjectFromID(a_ref_id, object_list);
+
+
 
 	if (!obj) {
 		a_ref_id = -1;

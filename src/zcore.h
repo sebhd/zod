@@ -138,19 +138,23 @@ class ZCore
 	public:
 		ZCore();
 		virtual ~ZCore() {}
-
+		virtual void AllowRun(bool allow_run_ = true) { allow_run = allow_run_; }
+bool* IsUnitLimitReached() { return unit_limit_reached; }
 		virtual void Setup();
 		virtual void Run();
 		void SetBotBypassData(char *data, int size);
 		static void CreateRandomBotBypassData(char *data, int &size);
-		virtual void AllowRun(bool allow_run_ = true) { allow_run = allow_run_; }
-	protected:
+			protected:
+		ZObject* MakeNewObject(int health_percent, char blevel, int refId, int x, int y, int owner, unsigned char ot, unsigned char oid, unsigned short extra_links, bool setOwner, vector<ZObject*> *obj_list);
 		void InitEncryption();
 		void SetupRandomizer();
 		bool CheckRegistration();
 		int GetObjectIndex(ZObject* &the_object, vector<ZObject*> &the_list);
 		static ZObject* GetObjectFromID_BS(int ref_id, vector<ZObject*> &the_list);
-		static ZObject* GetObjectFromID(int ref_id, vector<ZObject*> &the_list);
+
+		//ZObject* GetObjectFromID(int ref_id, vector<ZObject*> &the_list);
+		ZObject* GetObjectFromID(int ref_id);
+
 		void CreateWaypointSendData(int ref_id, vector<waypoint> &waypoint_list, char* &data, int &size);
 		ZObject* ProcessWaypointData(char *data, int size, bool is_server = false, int ok_team = -1);
 		ZObject* ProcessRallypointData(char *data, int size, bool is_server = false, int ok_team = -1);
@@ -189,6 +193,7 @@ class ZCore
 
 		bool allow_run;
 
+		// TODO 4: transform these to std::vectors?
 		bool unit_limit_reached[MAX_TEAM_TYPES];
 		int team_units_available[MAX_TEAM_TYPES];
 		float team_zone_percentage[MAX_TEAM_TYPES];

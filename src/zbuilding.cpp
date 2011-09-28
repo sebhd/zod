@@ -5,8 +5,9 @@ ZSDL_Surface ZBuilding::level_img[MAX_BUILDING_LEVELS];
 ZSDL_Surface ZBuilding::exhaust[13];
 ZSDL_Surface ZBuilding::little_exhaust[4];
 
-ZBuilding::ZBuilding(ZTime *ztime_, ZSettings *zsettings_, planet_type palette_) :
-		ZObject(ztime_, zsettings_) {
+
+ZBuilding::ZBuilding(ZTime *ztime_, ZSettings *zsettings_, planet_type palette_) : ZObject(ztime_, zsettings_) {
+
 	object_name = "building";
 	destroyed = false;
 	palette = palette_;
@@ -70,6 +71,8 @@ void ZBuilding::Init() {
 }
 
 int ZBuilding::GetBuildState() {
+
+	//if (gameCore->IsUnitLimitReached()[owner]) {
 	if (unit_limit_reached[owner]) {
 		return BUILDING_PAUSED;
 	} else {
@@ -135,6 +138,11 @@ bool ZBuilding::SetBuildingProduction(unsigned char ot, unsigned char oid) {
 
 	return true;
 }
+
+void ZBuilding::SetBuildList(ZBuildList *buildlist_) {
+	buildlist = buildlist_;
+}
+
 
 bool ZBuilding::AddBuildingQueue(unsigned char ot, unsigned char oid, bool push_to_front) {
 	if (owner == NULL_TEAM) {
@@ -416,6 +424,7 @@ bool ZBuilding::BuildUnit(double &the_time, unsigned char &ot, unsigned char &oi
 		return false;
 
 	if (the_time >= bfinal_time && !unit_limit_reached[owner]) {
+	//if (the_time >= bfinal_time && !gameCore->IsUnitLimitReached()[owner]) {
 		ot = bot;
 		oid = boid;
 		return true;

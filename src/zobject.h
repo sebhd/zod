@@ -1,6 +1,7 @@
 #ifndef _ZOBJECT_H_
 #define _ZOBJECT_H_
 
+
 #include "constants.h"
 #include "common.h"
 #include "zsdl.h"
@@ -18,7 +19,6 @@
 #include "zteam.h"
 #include "ztime.h"
 #include "zolists.h"
-
 
 //effects
 #include "ebullet.h"
@@ -64,6 +64,8 @@ class ZRobot;
 #include <math.h>
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
+
+class ZCore;
 
 using namespace std;
 
@@ -132,8 +134,6 @@ public:
 	int path_finding_id;
 	bool got_pf_response;
 	vector<ZPath_Finding_AStar::pf_point> pf_point_list;
-
-
 
 	waypoint_information() {
 		clear();
@@ -264,14 +264,11 @@ public:
 	int entered_repair_building_ref_id;
 	bool repair_unit;
 
-
-
 	int rdriver_type;
 	vector<driver_info_s> rdriver_info;
 	vector<waypoint> rwaypoint_list;
 	bool recheck_lid_status;
 	unsigned char rot, roid;
-
 
 	//ZObject* destroy_fort_building;
 	int destroy_fort_building_ref_id;
@@ -347,7 +344,7 @@ public:
 // 		virtual SDL_Surface *GetRender();
 	void RenderWaypointLine(int sx, int sy, int ex, int ey, int view_h, int view_w);
 	virtual void DoRenderWaypoints(ZMap &the_map, SDL_Surface *dest, vector<ZObject*> &object_list,
-	bool is_rally_points = false, int shift_x = 0, int shift_y = 0);
+			bool is_rally_points = false, int shift_x = 0, int shift_y = 0);
 	virtual void DoPreRender(ZMap &the_map, SDL_Surface *dest, int shift_x = 0, int shift_y = 0);
 	virtual void DoRender(ZMap &the_map, SDL_Surface *dest, int shift_x = 0, int shift_y = 0);
 	virtual void DoAfterEffects(ZMap &the_map, SDL_Surface *dest, int shift_x = 0, int shift_y = 0);
@@ -372,7 +369,7 @@ public:
 	virtual void FireMissile(int x_, int y_);
 	virtual void FireTurrentMissile(int x_, int y_, double offset_time);
 	virtual ZGuiWindow *MakeGuiWindow();
-	void SetBuildList(ZBuildList *buildlist_);
+
 	void SetUnitLimitReachedList(bool *unit_limit_reached_);
 	virtual void SetLevel(int level_);
 	virtual int GetLevel();
@@ -416,6 +413,8 @@ public:
 
 	virtual bool CanSnipe();
 
+	void SetGameCore(ZCore* core) { gameCore = core; }
+
 	bool HasProcessedDeath();
 	void SetHasProcessedDeath(bool processed_death_);
 
@@ -449,15 +448,19 @@ public:
 	bool CanAttackObject(ZObject *obj);
 	virtual void TryDropTracks() {
 	}
+
+	/*
 	virtual bool AddBuildingQueue(unsigned char ot, unsigned char oid, bool push_to_front = true) {
 		return false;
 	}
 	virtual bool CancelBuildingQueue(int list_i, unsigned char ot, unsigned char oid) {
 		return false;
 	}
+	*/
 	virtual bool ProducesUnits() {
 		return false;
 	}
+
 
 	static int DirectionFromLoc(float dx, float dy);
 	void SetCords(int x, int y);
@@ -517,7 +520,7 @@ public:
 	bool WithinAttackRadius(int ox, int oy);
 	bool WithinAttackRadius(ZObject *obj);
 	bool WithinAttackRadiusOf(vector<ZObject*> &avoid_list, int ox, int oy);
-	static ZObject* GetObjectFromID_BS(int ref_id, vector<ZObject*> &the_list);
+	//static ZObject* GetObjectFromID_BS(int ref_id, vector<ZObject*> &the_list);
 	static ZObject* GetObjectFromID(int ref_id, vector<ZObject*> &the_list);
 	bool StopMove();
 	virtual void SetAttackObject(ZObject *obj);
@@ -618,7 +621,10 @@ public:
 	virtual bool StopBuildingProduction(bool clear_queue_list = true) {
 		return false;
 	}
+
+	// TODO 4: Move to ZBuilding?
 	virtual bool BuildUnit(double &the_time, unsigned char &ot, unsigned char &oid);
+
 	virtual bool RepairUnit(double &the_time, unsigned char &ot, unsigned char &oid, int &driver_type_,
 			vector<driver_info_s> &driver_info_, vector<waypoint> &rwaypoint_list_);
 	virtual bool StoreBuiltCannon(unsigned char oid);
@@ -626,7 +632,9 @@ public:
 		data = NULL;
 		size = 0;
 	}
+
 	virtual void CreateTeamData(char *&data, int &size);
+
 	virtual void CreateRepairAnimData(char *&data, int &size, bool play_sound = true) {
 		data = NULL;
 		size = 0;
@@ -642,7 +650,6 @@ public:
 	virtual void ProcessKillObject();
 	void InitRealMoveSpeed(ZMap &tmap);
 	void PostPathFindingResult(ZPath_Finding_Response* response);
-
 
 	virtual void SignalLidShouldOpen();
 	virtual void SignalLidShouldClose();
@@ -690,26 +697,14 @@ protected:
 	void InitTypeId(unsigned char ot, unsigned char oid);
 	virtual void RecalcDirection();
 
-	vector<driver_info_s> rdriver_info;
-	int rdriver_type;
-
-	//driver
-	// TODO 4: Move all driver stuff to ZMannedObject
-	int driver_type;
-	vector<driver_info_s> driver_info;
-
 
 
 	static ZSettings default_zsettings;
-
 	static ZSDL_Surface group_tag[10];
-	//static Mix_Chunk *selected_wav[6];
-	//static Mix_Chunk *selected_robot_wav[MAX_ROBOT_TYPES];
-	//static Mix_Chunk *acknowledge_wav[12];
 
 	static vector<damage_missile> *damage_missile_list;
 
-	ZBuildList *buildlist;
+
 	ZSettings *zsettings;
 	ZMap *zmap;
 	ZTime *ztime;
@@ -761,14 +756,20 @@ protected:
 	ZSDL_Surface hover_name_img;
 	ZSDL_Surface hover_name_star_img;
 	double radius_i;
+
+	// TODO 4: Read max_health "just in time" from zsettings instead of storing it for each object
 	int max_health;
 	int health;
 	map_zone_info *connected_zone;
+
+	// TODO 5: remove from zobject, fetch just in time from ZCore instead
 	bool *unit_limit_reached;
 	bool dont_stamp;
 	bool has_explosives;
 	bool attacked_by_explosives;
 	bool do_hit_effect;
+
+	ZCore* gameCore;
 
 	bool can_snipe;
 
@@ -796,13 +797,10 @@ protected:
 	int missile_speed;
 	int attack_radius;
 
-
 	//server only stuff
 	bool killme;
 	double killme_time;
 	waypoint last_wp;
-
-
 
 	//group stuff
 	vector<ZObject*> minion_list;

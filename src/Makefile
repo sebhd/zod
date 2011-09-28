@@ -3015,30 +3015,6 @@ zserver_commands.cpp.s:
 	$(MAKE) -f CMakeFiles/zod.dir/build.make CMakeFiles/zod.dir/zserver_commands.cpp.s
 .PHONY : zserver_commands.cpp.s
 
-zserver_events.o: zserver_events.cpp.o
-.PHONY : zserver_events.o
-
-# target to build an object file
-zserver_events.cpp.o:
-	$(MAKE) -f CMakeFiles/zod.dir/build.make CMakeFiles/zod.dir/zserver_events.cpp.o
-.PHONY : zserver_events.cpp.o
-
-zserver_events.i: zserver_events.cpp.i
-.PHONY : zserver_events.i
-
-# target to preprocess a source file
-zserver_events.cpp.i:
-	$(MAKE) -f CMakeFiles/zod.dir/build.make CMakeFiles/zod.dir/zserver_events.cpp.i
-.PHONY : zserver_events.cpp.i
-
-zserver_events.s: zserver_events.cpp.s
-.PHONY : zserver_events.s
-
-# target to generate assembly for a file
-zserver_events.cpp.s:
-	$(MAKE) -f CMakeFiles/zod.dir/build.make CMakeFiles/zod.dir/zserver_events.cpp.s
-.PHONY : zserver_events.cpp.s
-
 zsettings.o: zsettings.cpp.o
 .PHONY : zsettings.o
 
@@ -3603,9 +3579,6 @@ help:
 	@echo "... zserver_commands.o"
 	@echo "... zserver_commands.i"
 	@echo "... zserver_commands.s"
-	@echo "... zserver_events.o"
-	@echo "... zserver_events.i"
-	@echo "... zserver_events.s"
 	@echo "... zsettings.o"
 	@echo "... zsettings.i"
 	@echo "... zsettings.s"

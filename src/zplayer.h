@@ -287,7 +287,7 @@ private:
 	//########## BEGIN TCP event handlers ############
 	virtual void add_new_object_event(char *data, int size, int dummy);
 	virtual void connect_event(char *data, int size, int dummy);
-	virtual void delete_object_event(char *data, int size, int dummy);
+	//virtual void delete_object_event(char *data, int size, int dummy);
 	virtual void destroy_object_event(char *data, int size, int dummy);
 	virtual void display_login_event(char *data, int size, int dummy);
 	virtual void display_news_event(char *data, int size, int dummy);
@@ -309,7 +309,7 @@ private:
 	virtual void set_player_voteinfo_event(char *data, int size, int dummy);
 	virtual void set_regkey(char *data, int size, int dummy);
 	virtual void set_repair_building_anim_event(char *data, int size, int dummy);
-	virtual void set_settings_event(char *data, int size, int dummy);
+	//virtual void set_settings_event(char *data, int size, int dummy);
 	virtual void set_vote_info_event(char *data, int size, int dummy);
 	virtual void snipe_object_event(char *data, int size, int dummy);
 	virtual void store_map_event(char *data, int size, int dummy);

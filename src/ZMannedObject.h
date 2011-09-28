@@ -11,7 +11,6 @@ public:
 	virtual ~ZMannedObject();
 	virtual void AddDriver(int health, int experience);
 	virtual void AddDriver(driver_info_s new_driver);
-	//virtual void NewAddDriver(ZObject driver);
 
 	virtual bool CanBeSniped();
 	virtual bool CanBeEntered();
@@ -25,20 +24,17 @@ public:
 	virtual float GetDamageChance();
 	virtual float GetSnipeChance();
 
+	virtual void CreateTeamData(char *&data, int &size);
 
 	virtual unsigned char GetExperience();
 	virtual void SetExperience(unsigned char);
 
 	int DamageDriverHealth(int damage_amount);
-	//int NewDamageDriverHealth(int damage_amount);
 
 	virtual vector<driver_info_s> &GetDrivers();
-	//virtual vector<ZObject>& NewGetDrivers();
-
-	virtual int GetDriverType();
 
 	virtual int GetDriverHealth();
-	//virtual int NewGetDriverHealth();
+	virtual int GetDriverType();
 
 	virtual bool GetEjectable();
 
@@ -52,7 +48,10 @@ public:
 protected:
 	bool can_be_sniped;
 	bool ejectable;
-	//vector<ZObject> newDriverInfo;
+
+	int driver_type;
+	vector<driver_info_s> driver_info;
+
 };
 
 #endif /* ZMANNEDOBJECT_H_ */

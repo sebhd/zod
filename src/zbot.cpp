@@ -166,7 +166,7 @@ void ZBot::CollectOurUnits_3(vector<ZObject*> &units_list, vector<ZObject*> &tar
 
 				ref_id = (*o)->GetWayPointList().begin()->ref_id;
 
-				tobj = this->GetObjectFromID(ref_id, object_list);
+				tobj = this->GetObjectFromID(ref_id);
 
 				//if we have a target skip this unit
 				//unless it is going to a flag we own
@@ -231,7 +231,7 @@ void ZBot::GiveOutOrders_2(vector<ZObject*> unit_list, vector<ZObject*> target_l
 			if ((*u)->GetWayPointList().size()) {
 				//is it still trying to get a flag we don't own?
 				if ((*u)->GetWayPointList().begin()->mode == MOVE_WP) {
-					ZObject *temp_obj = GetObjectFromID((*u)->GetWayPointList().begin()->ref_id, object_list);
+					ZObject *temp_obj = GetObjectFromID((*u)->GetWayPointList().begin()->ref_id);
 
 					if (temp_obj) {
 						unsigned char tot, toid;
@@ -947,7 +947,7 @@ bool ZBot::Stage1AI() {
 			//is this actually us trying to get a flag
 			//we currently own?
 			if ((*o)->GetWayPointList().begin()->mode == MOVE_WP) {
-				ZObject *temp_obj = GetObjectFromID((*o)->GetWayPointList().begin()->ref_id, object_list);
+				ZObject *temp_obj = GetObjectFromID((*o)->GetWayPointList().begin()->ref_id);
 
 				if (!temp_obj)
 					continue;
@@ -1378,6 +1378,7 @@ void ZBot::connect_event(char *data, int size, int dummy) {
 	SendBotBypassData();
 }
 
+/*
 void ZBot::delete_object_event(char *data, int size, int dummy) {
 	ZObject *obj = ProcessDeleteObject(data, size);
 
@@ -1385,11 +1386,12 @@ void ZBot::delete_object_event(char *data, int size, int dummy) {
 		return;
 	}
 
-	// TODO 3: Is this really bot-only?
+
 	for (vector<ZObject*>::iterator i = object_list.begin(); i != object_list.end(); i++) {
 		(*i)->RemoveObject(obj);
 	}
 }
+*/
 
 void ZBot::destroy_object_event(char *data, int size, int dummy) {
 	destroy_object_packet *pi = (destroy_object_packet*) data;
@@ -1399,7 +1401,7 @@ void ZBot::destroy_object_event(char *data, int size, int dummy) {
 		return;
 	}
 
-	ZObject *obj = GetObjectFromID(pi->ref_id, object_list);
+	ZObject *obj = GetObjectFromID(pi->ref_id);
 
 	if (!obj) {
 		return;
@@ -1459,9 +1461,11 @@ void ZBot::set_player_voteinfo_event(char *data, int size, int dummy) {
 	ProcessSetLPlayerVoteInfo(data, size);
 }
 
+/*
 void ZBot::set_settings_event(char *data, int size, int dummy) {
 	ProcessZSettings(data, size);
 }
+*/
 
 void ZBot::set_team_event(char *data, int size, int dummy) {
 	ProcessSetTeam(data, size);
