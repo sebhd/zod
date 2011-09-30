@@ -1,21 +1,21 @@
-// TODO 3:Higher intel for example gives more accurate shots, which will have a clear impact on who wins a battle. The higher intel promoted unit will hit the enemy more often than the enemy will hit it.
+// TODO 2: Don't gain experience for destroying map features like rocks
+// TODO 2: Finish implementation of all effects of unit experience/smartness:
+// TODO 2: Gain experience for sniping vehicle drivers
 
-// TODO 3: Smart units run away from overwhelming odds, and scatter wider making them harder to hit.
-
-// TODO 3: Smart units see more enemies and return fire quicker. In other words, they’re quicker on the draw.
-
-// TODO 3: Smart units will spin their turret quicker to face an enemy.
-
-// TODO 3: Smart units don’t pop their heads out of tanks very often, and if they have, they duck down if they see an enemy firing on them.
-
-// TODO 3: Star ratings are gained by killing other units (whole groups). They are gained by individual groups who get the kill, they’re not allowed to gain any more experience for 10 seconds.
-
+/* Smart units run away from overwhelming odds, and scatter wider making them harder to hit.
+ * Smart units see more enemies and return fire quicker. In other words, they’re quicker on the draw.
+ * Smart units will spin their turret quicker to face an enemy.
+ * Smart units don’t pop their heads out of tanks very often, and if they have, they duck down if they see an enemy firing on them.
+ * Star ratings are gained by killing other units (whole groups). They are gained by individual groups who get the kill, they’re not allowed to gain any more experience for 10 seconds.
+ */
 
 #include "zobject.h"
+#include "zbuilding.h"
 #include "common.h"
 #include "zfont_engine.h"
 #include "ZMannedObject.h"
 #include <iostream>
+#include "vcrane.h"
 
 using namespace COMMON;
 
@@ -64,6 +64,7 @@ ZObject::ZObject(ZTime *ztime_, ZSettings *zsettings_) {
 	real_move_speed = 0;
 	xover = yover = 0;
 	last_process_server_time = last_process_time;
+	last_experience_gain_time = -1000;
 	last_radius_time = last_process_time;
 	last_loc_set_time = last_process_time;
 	waypoint_cursor.SetTeam(NULL_TEAM);
@@ -109,8 +110,8 @@ ZObject::ZObject(ZTime *ztime_, ZSettings *zsettings_) {
 	//damage_chance = 0;
 	damage = 0;
 	damage_is_missile = false;
-	damage_radius = 1;
-
+//	damage_radius = 1;
+	object_name = "object";
 	//needed for when an object needs to be removed after some time
 	killme = false;
 	killme_time = 0;
@@ -129,12 +130,12 @@ ZObject::~ZObject() {
 }
 
 // TODO 4: Replace the 'force update' flag with a method that does hover_name_img.Unload() so that the image is recreated only once (when it is needed the next time)
-ZSDL_Surface &ZObject::CreateHoverNameImages(bool force_update) {
+ZSDL_Surface &ZObject::CreateHoverNameImages() {
 
 	// TODO 4: Clean up code for object name image generating & handling
 
 	// If the image already exists, we don't need to create it and can simply return it:
-	if ((hover_name_img.GetBaseSurface() && hover_name_star_img.GetBaseSurface()) && !force_update) {
+	if ((hover_name_img.GetBaseSurface() && hover_name_star_img.GetBaseSurface())) {
 		return hover_name_img;
 	}
 
@@ -151,10 +152,10 @@ ZSDL_Surface &ZObject::CreateHoverNameImages(bool force_update) {
 			font = SMALL_WHITE_FONT;
 			break;
 		case 1:
-			font = SMALL_GREEN_FONT;
+			font = SMALL_YELLOW_FONT;
 			break;
 		case 2:
-			font = SMALL_YELLOW_FONT;
+			font = SMALL_GREEN_FONT;
 			break;
 		}
 
@@ -487,14 +488,18 @@ void ZObject::DoRenderWaypoints(ZMap &the_map, SDL_Surface *dest, vector<ZObject
 	}
 }
 
-void ZObject::DoReviveEffect() {
+/*
+ void ZObject::DoReviveEffect() {
 
-}
+ }
+ */
 
 void ZObject::FireMissile(int x_, int y_) {
 
 }
 
+// NOTE: This method is overloaded by ZMannedObject because there, the damage chance
+// depends on the driver.
 float ZObject::GetDamageChance() {
 	ZUnit_Settings& unitSettings = zsettings->GetUnitSettings(m_object_type, m_object_id);
 	return unitSettings.attack_damage_chance * GetSmartness();
@@ -508,6 +513,7 @@ int ZObject::GetHealth() {
 	return health;
 }
 
+// TODO 3: REFACTORING: Get rid of this unflexible thing!
 string ZObject::GetHoverName(unsigned char ot, unsigned char oid) {
 	switch (ot) {
 	case CANNON_OBJECT:
@@ -596,6 +602,7 @@ ZSDL_Surface &ZObject::GetHoverNameImgStatic(unsigned char ot, unsigned char oid
 		string render_str;
 
 		render_str = GetHoverName(ot, oid);
+
 		if (render_str.length())
 			static_hover_name_img[ot][oid].LoadBaseImage(
 					ZFontEngine::GetFont(SMALL_WHITE_FONT).Render(render_str.c_str()));
@@ -688,7 +695,7 @@ void ZObject::InitTypeId(unsigned char ot, unsigned char oid) {
 		damage = unit_settings.attack_damage * MAX_UNIT_HEALTH;
 		//	damage_chance = unit_settings.attack_damage_chance;
 		damage_int_time = unit_settings.attack_speed;
-		damage_radius = unit_settings.attack_damage_radius;
+		//	damage_radius = unit_settings.attack_damage_radius;
 		max_health = unit_settings.health * MAX_UNIT_HEALTH;
 		max_stamina = unit_settings.max_run_time;
 		missile_speed = unit_settings.attack_missile_speed;
@@ -742,8 +749,6 @@ void ZObject::InitRealMoveSpeed(ZMap &tmap) {
 	//real_move_speed = move_speed * tmap.GetTileWalkSpeed(x + (width_pix >> 1), y + (height_pix >> 1));
 	real_move_speed = move_speed * tmap.GetTileWalkSpeed(center_x, center_y);
 }
-
-
 
 bool ZObject::IsDestroyed() {
 	return (health <= 0 && max_health > 0);
@@ -814,12 +819,8 @@ void ZObject::PlayAcknowledgeAnim(ZPortrait &portrait, bool no_way) {
 	}
 }
 
+// Overloaded in derived classes
 void ZObject::PlayAcknowledgeWav() {
-	//int ch;
-
-	//ch = rand() % 12;
-
-	//ZMix_PlayChannel(-1, acknowledge_wav[ch], 0);
 }
 
 void ZObject::PlaySelectedAnim(ZPortrait &portrait) {
@@ -839,15 +840,18 @@ void ZObject::PlaySelectedAnim(ZPortrait &portrait) {
 	}
 }
 
+// Overloaded in derived classes
 void ZObject::PlaySelectedWav() {
-	//int ch;
-
-	//ch = rand() % 6;
-
-	//ZMix_PlayChannel(-1, selected_wav[ch], 0);
 }
 
 void ZObject::SetExperience(unsigned char exp) {
+
+	if (last_experience_gain_time + 10 > ztime->ztime) {
+		std::cout << "Last experience gain was not long ago" << std::endl;
+		return;
+	}
+
+	last_experience_gain_time = ztime->ztime;
 
 	if (exp < 0)
 		exp = 0;
@@ -855,17 +859,18 @@ void ZObject::SetExperience(unsigned char exp) {
 		exp = 2;
 
 	if (experience != exp) {
+
 		experience = exp;
 		sflags.updated_experience = true;
 
 		// IMPORTANT: Force re-generation of the unit name label image with colored experience star
 		// so that the changed experience is visible to the player:
-		hover_name_star_img.Unload();
-
+		ForceHoverNameImageUpdate();
 	}
 }
 
 void ZObject::SetGroupExperience(unsigned char exp) {
+
 	ZObject* leader = GetGroupLeader();
 
 	// Update experience of all minions:
@@ -913,8 +918,13 @@ void ZObject::SetHealth(int new_health, ZMap &tmap) {
 		health = max_health;
 
 	if (was_destroyed && !IsDestroyed()) {
-		DoReviveEffect();
-		UnSetDestroyMapImpassables(tmap);
+
+		ZBuilding* building = dynamic_cast<ZBuilding*>(this);
+
+		if (building) {
+			building->DoReviveEffect();
+			UnSetDestroyMapImpassables(tmap);
+		}
 	} else if (!was_destroyed && IsDestroyed()) {
 		SetDestroyMapImpassables(tmap);
 		ProcessKillObject();
@@ -955,8 +965,8 @@ void ZObject::RenderHover(ZMap &zmap, SDL_Surface *dest, team_type viewers_team)
 	}
 
 	if (display_health_bar)
-	//if you are rendering the hover name, then you are also rendering the health
-	RenderHealth(zmap, dest);
+		//if you are rendering the hover name, then you are also rendering the health
+		RenderHealth(zmap, dest);
 }
 
 void ZObject::RenderHealth(ZMap &zmap, SDL_Surface *dest) {
@@ -1847,42 +1857,9 @@ void ZObject::SetCords(int x_, int y_) {
 	center_y = y + (height_pix >> 1);
 }
 
-//void ZObject::GetCords(int &x_, int &y_)
-//{
-//	x_ = loc.x;
-//	y_ = loc.y;
-//}
-
-//void ZObject::GetCenterCords(int &x_, int &y_)
-//{
-//	//int &x = loc.x;
-//	//int &y = loc.y;
-//	//x_ = x + (width_pix >> 1);
-//	//y_ = y + (height_pix >> 1);
-//	x_ = center_x;
-//	y_ = center_y;
-//}
-
 void ZObject::SetOwner(team_type owner_) {
 	owner = owner_;
 }
-
-// SDL_Surface *ZObject::GetRender()
-// {
-// 	return NULL;
-// }
-
-//void ZObject::GetDimensionsPixel(int &w_pix, int &h_pix)
-//{
-//	w_pix = width_pix;
-//	h_pix = height_pix;
-//}
-
-//void ZObject::GetDimensions(int &w, int &h)
-//{
-//	w = width;
-//	h = height;
-//}
 
 int ZObject::Process() {
 	printf("ZObject::Process:%s\n", object_name.c_str());
@@ -1976,14 +1953,6 @@ void ZObject::SetDestroyed(bool is_destroyed) {
 	destroyed = is_destroyed;
 }
 
-/**
- * Writes object_type and object_id to the passed references:
- */
-//team_type ZObject::GetOwner()
-//{
-//   return owner;
-//}
-
 int ZObject::ProcessServer(ZMap &tmap, ZOLists &ols) {
 	double &the_time = ztime->ztime;
 	double time_dif;
@@ -2009,7 +1978,8 @@ int ZObject::ProcessServer(ZMap &tmap, ZOLists &ols) {
 	sflags.build_unit = BuildUnit(the_time, sflags.bot, sflags.boid);
 
 	//repair unit
-	sflags.repair_unit = RepairUnit(the_time, sflags.rot, sflags.roid, sflags.rdriver_type, sflags.rdriver_info, sflags.rwaypoint_list);
+	sflags.repair_unit = RepairUnit(the_time, sflags.rot, sflags.roid, sflags.rdriver_type, sflags.rdriver_info,
+			sflags.rwaypoint_list);
 
 	//lid business
 	ProcessServerLid();
@@ -2039,6 +2009,9 @@ int ZObject::ProcessServer(ZMap &tmap, ZOLists &ols) {
 		} else
 			is_new_waypoint = false;
 
+		VCrane* crane = dynamic_cast<VCrane*>(this);
+
+		// TODO 3: Move this to virtual overloaded methods
 		switch (wp->mode) {
 		case MOVE_WP:
 			ProcessMoveWP(wp, time_dif, is_new_waypoint, ols, tmap, true);
@@ -2060,7 +2033,9 @@ int ZObject::ProcessServer(ZMap &tmap, ZOLists &ols) {
 			ProcessAgroWP(wp, time_dif, is_new_waypoint, ols, tmap);
 			break;
 		case CRANE_REPAIR_WP:
-			ProcessCraneRepairWP(wp, time_dif, is_new_waypoint, ols, tmap);
+			if (crane) {
+				crane->ProcessCraneRepairWP(wp, time_dif, is_new_waypoint, ols, tmap);
+			}
 			break;
 		case UNIT_REPAIR_WP:
 			ProcessUnitRepairWP(wp, time_dif, is_new_waypoint, ols, tmap);
@@ -2193,6 +2168,7 @@ bool ZObject::DodgeMissile(int tx, int ty, double time_till_explode) {
 		return false;
 	}
 
+	// TODO 3: This shouldn't be the correct way to prevent NULL_TEAM-owned objects from dodging...
 	if (owner == NULL_TEAM) {
 		return false;
 	}
@@ -2285,6 +2261,8 @@ void ZObject::ProcessRunStamina(double time_dif) {
 
 void ZObject::ProcessAttackDamage(ZMap &tmap, bool attack_player_given) {
 
+	ZUnit_Settings& unitSettings = zsettings->GetUnitSettings(m_object_type, m_object_id);
+
 	double &the_time = ztime->ztime;
 
 	if (!m_attacked_object || !damage || the_time < next_damage_time) {
@@ -2299,6 +2277,7 @@ void ZObject::ProcessAttackDamage(ZMap &tmap, bool attack_player_given) {
 		return;
 	}
 
+	// TODO 3: Why are grenade amounts managed by both leader *and* minion?
 	bool can_attack_with_grenades = (GetGrenadeAmount() || (GetGroupLeader() && GetGroupLeader()->GetGrenadeAmount()));
 
 	if (damage_is_missile || can_attack_with_grenades) {
@@ -2312,8 +2291,12 @@ void ZObject::ProcessAttackDamage(ZMap &tmap, bool attack_player_given) {
 		}
 
 		if (can_attack_with_grenades) {
-			tx += (rand() % 48) - 24;
-			ty += (rand() % 48) - 24;
+
+			// Smarter units aim better:
+			int miss_distance = 150.f / GetSmartness();
+
+			tx += (rand() % miss_distance) - miss_distance / 2;
+			ty += (rand() % miss_distance) - miss_distance / 2;
 
 			new_missile.x = tx;
 			new_missile.y = ty;
@@ -2336,15 +2319,18 @@ void ZObject::ProcessAttackDamage(ZMap &tmap, bool attack_player_given) {
 
 			//set a different next-time
 			next_damage_time = the_time + zsettings->grenade_attack_speed;
-		}
-		else {
-			tx += (rand() % 32) - 16;
-			ty += (rand() % 32) - 16;
+		} else {
+
+			// Smarter units aim better:
+			int miss_distance = 100.f / GetSmartness();
+
+			tx += (rand() % miss_distance) - miss_distance / 2;
+			ty += (rand() % miss_distance) - miss_distance / 2;
 
 			new_missile.x = tx;
 			new_missile.y = ty;
 			new_missile.damage = damage;
-			new_missile.radius = damage_radius;
+			new_missile.radius = unitSettings.attack_damage_radius;
 			new_missile.team = owner;
 			new_missile.attacker_ref_id = ref_id;
 			new_missile.attack_player_given = attack_player_given;
@@ -2359,7 +2345,7 @@ void ZObject::ProcessAttackDamage(ZMap &tmap, bool attack_player_given) {
 		sflags.missile_x = tx;
 		sflags.missile_y = ty;
 
-		// Tell the attacked unit to dodge:
+		// Tell the attacked unit to dodge, but chance to do so depends on smartness:
 		if (rand() % (m_attacked_object->GetSmartness())) {
 			m_attacked_object->DodgeMissile(tx, ty, new_missile.explode_time - the_time);
 		}
@@ -2404,6 +2390,8 @@ void ZObject::ProcessAttackDamage(ZMap &tmap, bool attack_player_given) {
 			sflags.portrait_anim_value = TARGET_DESTROYED_ANIM;
 		}
 	}
+
+	// TODO 3: Make smarter units close their lid when they are attacked
 }
 
 void ZObject::ProcessKillObject() {
@@ -2602,56 +2590,56 @@ void ZObject::ProcessAttackWP(vector<waypoint>::iterator &wp, double time_dif, b
 		//cur_wp_info.y = oy;
 		SetVelocity();
 		//did we halt movement?
-		if (!ProcessMoveOrKillWP(time_dif, tmap, wp, ols))
+		if (!ProcessMoveOrKillWP(time_dif, tmap, wp, ols)) {
+			return;
+		}
+
+		if (!ReachedTarget())
 			return;
 
-		{
-			if (!ReachedTarget())
-				return;
+		//go to the next pf_point, or kill this waypoint?
+		if (cur_wp_info.pf_point_list.size()) {
+			//cur_wp_info.x = cur_wp_info.pf_point_list.begin()->x;
+			//cur_wp_info.y = cur_wp_info.pf_point_list.begin()->y;
+			SetTarget(cur_wp_info.pf_point_list.begin()->x, cur_wp_info.pf_point_list.begin()->y);
+			SetVelocity();
 
-			//go to the next pf_point, or kill this waypoint?
-			if (cur_wp_info.pf_point_list.size()) {
-				//cur_wp_info.x = cur_wp_info.pf_point_list.begin()->x;
-				//cur_wp_info.y = cur_wp_info.pf_point_list.begin()->y;
-				SetTarget(cur_wp_info.pf_point_list.begin()->x, cur_wp_info.pf_point_list.begin()->y);
-				SetVelocity();
+			cur_wp_info.pf_point_list.erase(cur_wp_info.pf_point_list.begin());
+		} else {
+			//we are out of waypoints
 
-				cur_wp_info.pf_point_list.erase(cur_wp_info.pf_point_list.begin());
-			} else {
-				//we are out of waypoints
+			//reset the waypoint
+			StopMove();
+			cur_wp_info.clear();
 
-				//reset the waypoint
-				StopMove();
-				cur_wp_info.clear();
+			/*
+			 //find new route to target
+			 if(!target_object->NearestAttackLoc(x, y, cur_wp_info.x, cur_wp_info.y, attack_radius, (object_type == ROBOT_OBJECT), tmap))
+			 {
+			 target_object->GetCords(ox, oy);
+			 //cur_wp_info.x = ox + 8;
+			 //cur_wp_info.y = oy + 8;
+			 SetTarget(ox+8,oy+8);
+			 }
+			 else
+			 SetTarget();
 
-				/*
-				 //find new route to target
-				 if(!target_object->NearestAttackLoc(x, y, cur_wp_info.x, cur_wp_info.y, attack_radius, (object_type == ROBOT_OBJECT), tmap))
-				 {
-				 target_object->GetCords(ox, oy);
-				 //cur_wp_info.x = ox + 8;
-				 //cur_wp_info.y = oy + 8;
-				 SetTarget(ox+8,oy+8);
-				 }
-				 else
-				 SetTarget();
+			 cur_wp_info.got_pf_response = false;
+			 //cur_wp_info.path_finding_id = tmap.GetPathFinder().Find_Path(x + (width_pix >> 1), y + (height_pix >> 1), cur_wp_info.x, cur_wp_info.y, (object_type == ROBOT_OBJECT), ref_id);
+			 //cur_wp_info.path_finding_id = tmap.GetPathFinder().Find_Path(center_x, center_y, cur_wp_info.x, cur_wp_info.y, (object_type == ROBOT_OBJECT), ref_id);
+			 cur_wp_info.path_finding_id = tmap.GetPathFinder().Find_Path(x + 8, y + 8, cur_wp_info.x, cur_wp_info.y, (object_type == ROBOT_OBJECT), ref_id);
 
-				 cur_wp_info.got_pf_response = false;
-				 //cur_wp_info.path_finding_id = tmap.GetPathFinder().Find_Path(x + (width_pix >> 1), y + (height_pix >> 1), cur_wp_info.x, cur_wp_info.y, (object_type == ROBOT_OBJECT), ref_id);
-				 //cur_wp_info.path_finding_id = tmap.GetPathFinder().Find_Path(center_x, center_y, cur_wp_info.x, cur_wp_info.y, (object_type == ROBOT_OBJECT), ref_id);
-				 cur_wp_info.path_finding_id = tmap.GetPathFinder().Find_Path(x + 8, y + 8, cur_wp_info.x, cur_wp_info.y, (object_type == ROBOT_OBJECT), ref_id);
-
-				 //don't wait for thread if it wasn't created
-				 if(cur_wp_info.path_finding_id)
-				 StopMove();
-				 else
-				 {
-				 cur_wp_info.got_pf_response = true;
-				 SetVelocity();
-				 }
-				 */
-			}
+			 //don't wait for thread if it wasn't created
+			 if(cur_wp_info.path_finding_id)
+			 StopMove();
+			 else
+			 {
+			 cur_wp_info.got_pf_response = true;
+			 SetVelocity();
+			 }
+			 */
 		}
+
 	}
 }
 
@@ -3063,167 +3051,6 @@ void ZObject::ProcessEnterFortWP(vector<waypoint>::iterator &wp, double time_dif
 		SetVelocity();
 		break;
 	case EXIT_BUILDING_EFWS:
-		KillWP(wp);
-		break;
-	default:
-		KillWP(wp);
-		break;
-	}
-}
-
-void ZObject::ProcessCraneRepairWP(vector<waypoint>::iterator &wp, double time_dif, bool is_new, ZOLists &ols,
-		ZMap &tmap) {
-	const double z = 0.000001;
-	int &x = loc.x;
-	int &y = loc.y;
-	float &dx = loc.dx;
-	float &dy = loc.dy;
-	ZObject *target_object;
-	bool stoppable;
-
-	target_object = GetObjectFromID(wp->ref_id, ols.building_olist);
-
-	//target still exist?
-	//target still need repaired?
-	if (!target_object) {
-		KillWP(wp);
-		return;
-	}
-
-	//begin movement towards the entrance
-	if (is_new) {
-		int ent_x, ent_y, ent_x2, ent_y2;
-
-		cur_wp_info.stage = GOTO_ENTRANCE_CRWS;
-
-		if (target_object->GetCraneEntrance(ent_x, ent_y, ent_x2, ent_y2)) {
-			if (ent_x == ent_x2 && ent_y == ent_y2) {
-				//building has one entrance
-				//cur_wp_info.x = ent_x;
-				//cur_wp_info.y = ent_y;
-				SetTarget(ent_x, ent_y);
-			} else {
-				//bridge has two entrances, which is closer?
-				double d1, d2;
-
-				d1 = sqrt(pow((double) (x - ent_x), 2) + pow((double) (y - ent_y), 2));
-				d2 = sqrt(pow((double) (x - ent_x2), 2) + pow((double) (y - ent_y2), 2));
-
-				if (d1 < d2) {
-					//cur_wp_info.x = ent_x;
-					//cur_wp_info.y = ent_y;
-					SetTarget(ent_x, ent_y);
-				} else {
-					//cur_wp_info.x = ent_x2;
-					//cur_wp_info.y = ent_y2;
-					SetTarget(ent_x2, ent_y2);
-				}
-			}
-		} else //could not get building entrance info?
-		{
-			KillWP(wp);
-			return;
-		}
-
-		//these will be our exit cords for the last stage
-		cur_wp_info.crane_exit_x = cur_wp_info.x;
-		cur_wp_info.crane_exit_y = cur_wp_info.y;
-
-		//SetVelocity();
-
-		//find our way to the entrance
-		//cur_wp_info.path_finding_id = tmap.GetPathFinder().Find_Path(x + (width_pix >> 1), y + (height_pix >> 1), cur_wp_info.x, cur_wp_info.y, (object_type == ROBOT_OBJECT), ref_id);
-		//cur_wp_info.path_finding_id = tmap.GetPathFinder().Find_Path(center_x, center_y, cur_wp_info.x, cur_wp_info.y, (object_type == ROBOT_OBJECT), ref_id);
-		cur_wp_info.path_finding_id = tmap.GetPathFinder().Find_Path(x + 8, y + 8, cur_wp_info.x, cur_wp_info.y,
-				(m_object_type == ROBOT_OBJECT), HasExplosives(), ref_id);
-
-		//don't wait for thread if it wasn't created
-		if (cur_wp_info.path_finding_id)
-			StopMove();
-		else {
-			cur_wp_info.got_pf_response = true;
-			SetVelocity();
-		}
-	}
-
-	if (!target_object->CanBeRepairedByCrane(owner)) {
-		if (cur_wp_info.stage == GOTO_ENTRANCE_CRWS) {
-			KillWP(wp);
-			return;
-		} else if (cur_wp_info.stage == ENTER_BUILDING_CRWS) {
-			//if the building gets repaired while we are entering it
-			//then execute the exit stage of this WP
-			//cur_wp_info.x = cur_wp_info.crane_exit_x;
-			//cur_wp_info.y = cur_wp_info.crane_exit_y;
-			SetTarget(cur_wp_info.crane_exit_x, cur_wp_info.crane_exit_y);
-
-			cur_wp_info.stage = EXIT_BUILDING_CRWS;
-			SetVelocity();
-		}
-	}
-
-	//don't move if we do not have a response
-	if (!cur_wp_info.got_pf_response)
-		return;
-
-	switch (cur_wp_info.stage) {
-	case GOTO_ENTRANCE_CRWS:
-		stoppable = true;
-		break;
-	case ENTER_BUILDING_CRWS:
-	case EXIT_BUILDING_CRWS:
-		stoppable = false;
-		break;
-	}
-
-	if (!ProcessMoveOrKillWP(time_dif, tmap, wp, ols, stoppable))
-		return;
-
-	if (!ReachedTarget())
-		return;
-
-	//so we reached our current target... now enter the next stage
-	switch (cur_wp_info.stage) {
-	case GOTO_ENTRANCE_CRWS:
-		//go to the next pf_point, or next stage?
-		if (cur_wp_info.pf_point_list.size()) {
-			//cur_wp_info.x = cur_wp_info.pf_point_list.begin()->x;
-			//cur_wp_info.y = cur_wp_info.pf_point_list.begin()->y;
-			SetTarget(cur_wp_info.pf_point_list.begin()->x, cur_wp_info.pf_point_list.begin()->y);
-			SetVelocity();
-
-			cur_wp_info.pf_point_list.erase(cur_wp_info.pf_point_list.begin());
-		} else {
-			if (!target_object->GetCraneCenter(cur_wp_info.x, cur_wp_info.y))
-				KillWP(wp);
-			else {
-				cur_wp_info.stage = ENTER_BUILDING_CRWS;
-
-				SetTarget();
-				SetVelocity();
-
-				sflags.set_crane_anim = true;
-				sflags.crane_anim_on = true;
-				sflags.crane_rep_ref_id = wp->ref_id;
-			}
-		}
-		break;
-	case ENTER_BUILDING_CRWS:
-		//cur_wp_info.x = cur_wp_info.crane_exit_x;
-		//cur_wp_info.y = cur_wp_info.crane_exit_y;
-		SetTarget(cur_wp_info.crane_exit_x, cur_wp_info.crane_exit_y);
-		SetVelocity();
-
-		cur_wp_info.stage = EXIT_BUILDING_CRWS;
-		break;
-	case EXIT_BUILDING_CRWS:
-		//set the building to auto repair immediately...
-		target_object->do_auto_repair = true;
-		target_object->next_auto_repair_time = 0;
-
-		sflags.set_crane_anim = true;
-		sflags.crane_anim_on = false;
-		sflags.crane_rep_ref_id = wp->ref_id;
 		KillWP(wp);
 		break;
 	default:
@@ -3810,10 +3637,9 @@ void ZObject::RecalcDirection() {
 		direction = new_dir;
 }
 
-// TODO 4: Remove this and user ZCore::GetObjectFromID instead
+// TODO 4: REFACTOR: Remove this from here and user ZCore::GetObjectFromID() instead
+ZObject* ZObject::GetObjectFromID(int ref_id_, vector<ZObject*> &the_list) {
 
-/*
-ZObject* ZObject::GetObjectFromID_BS(int ref_id_, vector<ZObject*> &the_list) {
 	int low, high, midpoint;
 
 	low = 0;
@@ -3842,40 +3668,6 @@ ZObject* ZObject::GetObjectFromID_BS(int ref_id_, vector<ZObject*> &the_list) {
 	}
 
 	return NULL;
-}
-*/
-
-// TODO 4: REFACTOR: Remove this from here and user ZCore::GetObjectFromID() instead
-ZObject* ZObject::GetObjectFromID(int ref_id_, vector<ZObject*> &the_list) {
-
-	int low, high, midpoint;
-
-		low = 0;
-		high = the_list.size() - 1;
-		midpoint = 0;
-
-		//printf("ref id list: ");
-		//for(vector<ZObject*>::iterator obj=the_list.begin(); obj!=the_list.end();obj++)
-		//	printf("%d, ", (*obj)->GetRefID());
-		//printf("\n");
-
-		while (low <= high) {
-			int tref_id;
-
-			//midpoint = low + ((high - low) / 2);
-			midpoint = low + ((high - low) >> 1);
-
-			tref_id = the_list[midpoint]->GetRefID();
-
-			if (ref_id_ == tref_id)
-				return the_list[midpoint];
-			else if (ref_id_ < tref_id)
-				high = midpoint - 1;
-			else
-				low = midpoint + 1;
-		}
-
-		return NULL;
 }
 
 void ZObject::SetAttackObject(ZObject *obj) {
@@ -4092,8 +3884,6 @@ void ZObject::ResetProduction() {
 
 }
 
-
-
 bool ZObject::StoreBuiltCannon(unsigned char oid) {
 	return false;
 }
@@ -4134,12 +3924,6 @@ int ZObject::CannonsInZone(ZOLists &ols) {
 		}
 
 	return cannons_found;
-}
-
-vector<unsigned char> &ZObject::GetBuiltCannonList() {
-	static vector<unsigned char> arg;
-
-	return arg;
 }
 
 void ZObject::SetUnitLimitReachedList(bool *unit_limit_reached_) {
@@ -4211,6 +3995,7 @@ int ZObject::GetBuildState() {
 	return -1;
 }
 
+// Virtual method overloaded by derived classes
 void ZObject::SetMapImpassables(ZMap &tmap) {
 
 }
@@ -4268,8 +4053,9 @@ void ZObject::SetGroupLeader(ZObject *obj) {
 	// Force update of unit name label of the new leader because this unit is now
 	// responsible for displaying the group's experience:
 
-	if (leader_obj)
-		leader_obj->CreateHoverNameImages(true);
+	if (leader_obj) {
+		leader_obj->ForceHoverNameImageUpdate();
+	}
 
 }
 
@@ -4335,12 +4121,11 @@ void ZObject::CreateGroupInfoData(char *&data, int &size) {
 	}
 }
 
-
 void ZObject::CreateTeamData(char *&data, int &size) {
 
 	object_team_packet packet_header;
 
-	size = sizeof(object_team_packet);// + (driver_info.size() * sizeof(driver_info_s));
+	size = sizeof(object_team_packet); // + (driver_info.size() * sizeof(driver_info_s));
 	data = (char*) malloc(size);
 
 	packet_header.ref_id = ref_id;
@@ -4372,7 +4157,7 @@ void ZObject::ProcessGroupInfoData(char *data, int size, vector<ZObject*> &objec
 	SetGroupLeader(leader_obj);
 
 	if (leader_obj) {
-		leader_obj->CreateHoverNameImages(true);
+		leader_obj->ForceHoverNameImageUpdate();
 	}
 
 	//fill the minion list
@@ -4521,10 +4306,6 @@ bool ZObject::SetRepairUnit(ZObject *unit_obj) {
 
  }
  */
-
-void ZObject::DoRepairBuildingAnim(bool on_, double remaining_time_) {
-
-}
 
 bool ZObject::RepairUnit(double &the_time, unsigned char &ot, unsigned char &oid, int &driver_type_,
 		vector<driver_info_s> &driver_info_, vector<waypoint> &rwaypoint_list) {

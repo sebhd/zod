@@ -8,6 +8,9 @@
 #include "common.h"
 #include "constants.h"
 #include "zobject.h"
+
+//class ZObject;
+
 #include "zmap.h"
 #include "event_handler.h"
 #include "socket_handler.h"
@@ -193,7 +196,7 @@ bool* IsUnitLimitReached() { return unit_limit_reached; }
 
 		bool allow_run;
 
-		// TODO 4: transform these to std::vectors?
+
 		bool unit_limit_reached[MAX_TEAM_TYPES];
 		int team_units_available[MAX_TEAM_TYPES];
 		float team_zone_percentage[MAX_TEAM_TYPES];

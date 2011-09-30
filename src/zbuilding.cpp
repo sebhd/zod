@@ -1,12 +1,13 @@
 #include "zbuilding.h"
 #include "zfont_engine.h"
+#include "zcannon.h"
 
 ZSDL_Surface ZBuilding::level_img[MAX_BUILDING_LEVELS];
 ZSDL_Surface ZBuilding::exhaust[13];
 ZSDL_Surface ZBuilding::little_exhaust[4];
 
-
-ZBuilding::ZBuilding(ZTime *ztime_, ZSettings *zsettings_, planet_type palette_) : ZObject(ztime_, zsettings_) {
+ZBuilding::ZBuilding(ZTime *ztime_, ZSettings *zsettings_, planet_type palette_) :
+		ZObject(ztime_, zsettings_) {
 
 	object_name = "building";
 	destroyed = false;
@@ -143,7 +144,6 @@ void ZBuilding::SetBuildList(ZBuildList *buildlist_) {
 	buildlist = buildlist_;
 }
 
-
 bool ZBuilding::AddBuildingQueue(unsigned char ot, unsigned char oid, bool push_to_front) {
 	if (owner == NULL_TEAM) {
 		printf("Owner is NULL_TEAM\n");
@@ -155,7 +155,6 @@ bool ZBuilding::AddBuildingQueue(unsigned char ot, unsigned char oid, bool push_
 		printf("Building does not produce units");
 		return false;
 	}
-
 
 	//already maxed out?
 	if (queue_list.size() >= MAX_QUEUE_ITEMS) {
@@ -424,7 +423,7 @@ bool ZBuilding::BuildUnit(double &the_time, unsigned char &ot, unsigned char &oi
 		return false;
 
 	if (the_time >= bfinal_time && !unit_limit_reached[owner]) {
-	//if (the_time >= bfinal_time && !gameCore->IsUnitLimitReached()[owner]) {
+		//if (the_time >= bfinal_time && !gameCore->IsUnitLimitReached()[owner]) {
 		ot = bot;
 		oid = boid;
 		return true;
@@ -435,8 +434,7 @@ bool ZBuilding::BuildUnit(double &the_time, unsigned char &ot, unsigned char &oi
 
 bool ZBuilding::StoreBuiltCannon(unsigned char oid) {
 	//already full?
-	if (built_cannon_list.size() >= MAX_STORED_CANNONS
-	)
+	if (built_cannon_list.size() >= MAX_STORED_CANNONS)
 		return false;
 
 	printf("cannon stored\n");
@@ -449,28 +447,34 @@ int ZBuilding::CannonsInZone(ZOLists &ols) {
 	//the zbuilding version starts with built_cannon_list.size()
 	int cannons_found = built_cannon_list.size();
 
-	for (vector<ZObject*>::iterator i = ols.object_list->begin(); i != ols.object_list->end(); i++)
-		//for(vector<ZObject*>::iterator i=sol.cannon_object_list.begin();i!=sol.cannon_object_list.end();i++)
+	for (vector<ZObject*>::iterator i = ols.object_list->begin(); i != ols.object_list->end(); i++) {
+
 		if (this != *i && connected_zone == (*i)->GetConnectedZone()) {
 			unsigned char ot, oid;
 
 			(*i)->GetObjectID(ot, oid);
 
 			//collect in cannons that other buildings have not yet placed
-			if (ot == BUILDING_OBJECT)
-				cannons_found += (*i)->GetBuiltCannonList().size();
 
-			if (ot != CANNON_OBJECT)
-				continue;
+			ZBuilding* building = dynamic_cast<ZBuilding*>(*i);
+			if (building) {
+				cannons_found += building->GetBuiltCannonList().size();
+			}
 
-			cannons_found++;
+			ZCannon* cannon = dynamic_cast<ZCannon*>(*i);
+			if (cannon) {
+				cannons_found++;
+			}
+
 		}
+	}
 
 	return cannons_found;
 }
 
+
 bool ZBuilding::RemoveStoredCannon(unsigned char oid) {
-	//find it
+//find it
 	for (vector<unsigned char>::iterator i = built_cannon_list.begin(); i != built_cannon_list.end(); i++)
 		if (oid == *i) {
 			built_cannon_list.erase(i);
@@ -481,7 +485,7 @@ bool ZBuilding::RemoveStoredCannon(unsigned char oid) {
 }
 
 bool ZBuilding::HaveStoredCannon(unsigned char oid) {
-	//find it
+//find it
 	for (vector<unsigned char>::iterator i = built_cannon_list.begin(); i != built_cannon_list.end(); i++) {
 		if (oid == *i) {
 			return true;
@@ -512,9 +516,9 @@ void ZBuilding::ResetProduction() {
 		StopBuildingProduction();
 	}
 
-	//before queue list
-	//binit_time = the_time;
-	//RecalcBuildTime();
+//before queue list
+//binit_time = the_time;
+//RecalcBuildTime();
 }
 
 bool ZBuilding::GetBuildUnit(unsigned char &ot, unsigned char &oid) {
@@ -532,11 +536,11 @@ void ZBuilding::ResetShowTime(int new_time) {
 		return;
 
 	show_time_img.Unload();
-	//if(show_time_img)
-	//{
-	//	SDL_FreeSurface(show_time_img);
-	//	show_time_img = NULL;
-	//}
+//if(show_time_img)
+//{
+//	SDL_FreeSurface(show_time_img);
+//	show_time_img = NULL;
+//}
 
 	if (new_time > -1) {
 		show_time = new_time;
@@ -571,7 +575,7 @@ void ZBuilding::DoDeathEffect(bool do_fire_death, bool do_missile_death) {
 void ZBuilding::DoReviveEffect() {
 	do_base_rerender = true;
 
-	//no memory leaks
+//no memory leaks
 	for (vector<EStandard*>::iterator i = extra_effects.begin(); i != extra_effects.begin(); i++)
 		delete *i;
 
@@ -595,7 +599,7 @@ void ZBuilding::ProcessBuildingsEffects(double &the_time) {
 
 	should_effects = max_effects * (1 - damage_percent);
 
-	//if(should_effects) printf("should_effects:%d size:%d\n", should_effects, extra_effects.size());
+//if(should_effects) printf("should_effects:%d size:%d\n", should_effects, extra_effects.size());
 
 	for (int i = extra_effects.size(); i < should_effects; i++) {
 		int ex, ey;
@@ -618,7 +622,7 @@ void ZBuilding::ProcessBuildingsEffects(double &the_time) {
 		effects_added = true;
 	}
 
-	//sort effects
+//sort effects
 	if (effects_added)
 		sort(extra_effects.begin(), extra_effects.end(), sort_estandards_func);
 }
@@ -643,7 +647,7 @@ bool ZBuilding::RecalcBuildTime() {
 
 	bfinal_time_old = bfinal_time;
 
-	//calc
+//calc
 	if (!buildlist)
 		return false;
 
@@ -654,14 +658,14 @@ bool ZBuilding::RecalcBuildTime() {
 	if (build_state == BUILDING_SELECT)
 		return false;
 
-	//base time
+//base time
 	build_time = BuildTimeModified(buildlist->UnitBuildTime(bot, boid));
 
-	//do effect from zone ownage
-	//build_time = build_time - (build_time * 0.5 * zone_ownage);
+//do effect from zone ownage
+//build_time = build_time - (build_time * 0.5 * zone_ownage);
 
-	//do effect from building health
-	//build_time += BuildTimeIncrease(build_time);//build_time * (1.25 * (1.0 - (1.0 * health / max_health)));
+//do effect from building health
+//build_time += BuildTimeIncrease(build_time);//build_time * (1.25 * (1.0 - (1.0 * health / max_health)));
 
 	bfinal_time = binit_time + build_time;
 

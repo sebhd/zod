@@ -1243,6 +1243,7 @@ void ZClient::set_computer_message_event(char *data, int size, int dummy) {
 }
 
 void ZClient::set_object_experience_event(char *data, int size, int dummy) {
+
 	set_experience_packet *pi = (set_experience_packet*) data;
 
 	//good packet?
@@ -1257,7 +1258,7 @@ void ZClient::set_object_experience_event(char *data, int size, int dummy) {
 	}
 
 	obj->SetGroupExperience(pi->experience);
-	obj->CreateHoverNameImages(true);
+	obj->ForceHoverNameImageUpdate();
 }
 
 void ZClient::set_grenade_amount_event(char *data, int size, int dummy) {

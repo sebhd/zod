@@ -16,7 +16,7 @@ class VCrane : public ZVehicle
 		void DoRender(ZMap &the_map, SDL_Surface *dest, int shift_x = 0, int shift_y = 0);
 		void DoAfterEffects(ZMap &the_map, SDL_Surface *dest, int shift_x, int shift_y);
 		void DoDeathEffect(bool do_fire_death, bool do_missile_death);
-
+		void ProcessCraneRepairWP(vector<waypoint>::iterator &wp, double time_dif, bool is_new, ZOLists &ols, ZMap &tmap);
 		void DoCraneAnim(bool on_, ZObject *rep_obj = NULL);
 	private:
 		void RenderCrane(ZMap &the_map, SDL_Surface *dest, int shift_x = 0, int shift_y = 0);

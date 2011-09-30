@@ -145,6 +145,168 @@ int VCrane::Process()
 	return 1;
 }
 
+void VCrane::ProcessCraneRepairWP(vector<waypoint>::iterator &wp, double time_dif, bool is_new, ZOLists &ols,
+		ZMap &tmap) {
+	const double z = 0.000001;
+	int &x = loc.x;
+	int &y = loc.y;
+	float &dx = loc.dx;
+	float &dy = loc.dy;
+	ZObject *target_object;
+	bool stoppable;
+
+	target_object = GetObjectFromID(wp->ref_id, ols.building_olist);
+
+	//target still exist?
+	//target still need repaired?
+	if (!target_object) {
+		KillWP(wp);
+		return;
+	}
+
+	//begin movement towards the entrance
+	if (is_new) {
+		int ent_x, ent_y, ent_x2, ent_y2;
+
+		cur_wp_info.stage = GOTO_ENTRANCE_CRWS;
+
+		if (target_object->GetCraneEntrance(ent_x, ent_y, ent_x2, ent_y2)) {
+			if (ent_x == ent_x2 && ent_y == ent_y2) {
+				//building has one entrance
+				//cur_wp_info.x = ent_x;
+				//cur_wp_info.y = ent_y;
+				SetTarget(ent_x, ent_y);
+			} else {
+				//bridge has two entrances, which is closer?
+				double d1, d2;
+
+				d1 = sqrt(pow((double) (x - ent_x), 2) + pow((double) (y - ent_y), 2));
+				d2 = sqrt(pow((double) (x - ent_x2), 2) + pow((double) (y - ent_y2), 2));
+
+				if (d1 < d2) {
+					//cur_wp_info.x = ent_x;
+					//cur_wp_info.y = ent_y;
+					SetTarget(ent_x, ent_y);
+				} else {
+					//cur_wp_info.x = ent_x2;
+					//cur_wp_info.y = ent_y2;
+					SetTarget(ent_x2, ent_y2);
+				}
+			}
+		} else //could not get building entrance info?
+		{
+			KillWP(wp);
+			return;
+		}
+
+		//these will be our exit cords for the last stage
+		cur_wp_info.crane_exit_x = cur_wp_info.x;
+		cur_wp_info.crane_exit_y = cur_wp_info.y;
+
+		//SetVelocity();
+
+		//find our way to the entrance
+		//cur_wp_info.path_finding_id = tmap.GetPathFinder().Find_Path(x + (width_pix >> 1), y + (height_pix >> 1), cur_wp_info.x, cur_wp_info.y, (object_type == ROBOT_OBJECT), ref_id);
+		//cur_wp_info.path_finding_id = tmap.GetPathFinder().Find_Path(center_x, center_y, cur_wp_info.x, cur_wp_info.y, (object_type == ROBOT_OBJECT), ref_id);
+		cur_wp_info.path_finding_id = tmap.GetPathFinder().Find_Path(x + 8, y + 8, cur_wp_info.x, cur_wp_info.y,
+				(m_object_type == ROBOT_OBJECT), HasExplosives(), ref_id);
+
+		//don't wait for thread if it wasn't created
+		if (cur_wp_info.path_finding_id)
+			StopMove();
+		else {
+			cur_wp_info.got_pf_response = true;
+			SetVelocity();
+		}
+	}
+
+	if (!target_object->CanBeRepairedByCrane(owner)) {
+		if (cur_wp_info.stage == GOTO_ENTRANCE_CRWS) {
+			KillWP(wp);
+			return;
+		} else if (cur_wp_info.stage == ENTER_BUILDING_CRWS) {
+			//if the building gets repaired while we are entering it
+			//then execute the exit stage of this WP
+			//cur_wp_info.x = cur_wp_info.crane_exit_x;
+			//cur_wp_info.y = cur_wp_info.crane_exit_y;
+			SetTarget(cur_wp_info.crane_exit_x, cur_wp_info.crane_exit_y);
+
+			cur_wp_info.stage = EXIT_BUILDING_CRWS;
+			SetVelocity();
+		}
+	}
+
+	//don't move if we do not have a response
+	if (!cur_wp_info.got_pf_response)
+		return;
+
+	switch (cur_wp_info.stage) {
+	case GOTO_ENTRANCE_CRWS:
+		stoppable = true;
+		break;
+	case ENTER_BUILDING_CRWS:
+	case EXIT_BUILDING_CRWS:
+		stoppable = false;
+		break;
+	}
+
+	if (!ProcessMoveOrKillWP(time_dif, tmap, wp, ols, stoppable))
+		return;
+
+	if (!ReachedTarget())
+		return;
+
+	//so we reached our current target... now enter the next stage
+	switch (cur_wp_info.stage) {
+	case GOTO_ENTRANCE_CRWS:
+		//go to the next pf_point, or next stage?
+		if (cur_wp_info.pf_point_list.size()) {
+			//cur_wp_info.x = cur_wp_info.pf_point_list.begin()->x;
+			//cur_wp_info.y = cur_wp_info.pf_point_list.begin()->y;
+			SetTarget(cur_wp_info.pf_point_list.begin()->x, cur_wp_info.pf_point_list.begin()->y);
+			SetVelocity();
+
+			cur_wp_info.pf_point_list.erase(cur_wp_info.pf_point_list.begin());
+		} else {
+			if (!target_object->GetCraneCenter(cur_wp_info.x, cur_wp_info.y))
+				KillWP(wp);
+			else {
+				cur_wp_info.stage = ENTER_BUILDING_CRWS;
+
+				SetTarget();
+				SetVelocity();
+
+				sflags.set_crane_anim = true;
+				sflags.crane_anim_on = true;
+				sflags.crane_rep_ref_id = wp->ref_id;
+			}
+		}
+		break;
+	case ENTER_BUILDING_CRWS:
+		//cur_wp_info.x = cur_wp_info.crane_exit_x;
+		//cur_wp_info.y = cur_wp_info.crane_exit_y;
+		SetTarget(cur_wp_info.crane_exit_x, cur_wp_info.crane_exit_y);
+		SetVelocity();
+
+		cur_wp_info.stage = EXIT_BUILDING_CRWS;
+		break;
+	case EXIT_BUILDING_CRWS:
+		//set the building to auto repair immediately...
+		target_object->do_auto_repair = true;
+		target_object->next_auto_repair_time = 0;
+
+		sflags.set_crane_anim = true;
+		sflags.crane_anim_on = false;
+		sflags.crane_rep_ref_id = wp->ref_id;
+		KillWP(wp);
+		break;
+	default:
+		KillWP(wp);
+		break;
+	}
+}
+
+
 void VCrane::DoRender(ZMap &the_map, SDL_Surface *dest, int shift_x, int shift_y)
 {
 	int &x = loc.x;

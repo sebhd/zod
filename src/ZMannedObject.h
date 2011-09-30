@@ -2,7 +2,7 @@
 #define ZMANNEDOBJECT_H_
 
 #include "zobject.h"
-#include "zrobot.h"
+//#include "zrobot.h"
 
 class ZMannedObject: public ZObject {
 public:

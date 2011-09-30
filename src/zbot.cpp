@@ -421,10 +421,12 @@ void ZBot::GiveOutOrders_2(vector<ZObject*> unit_list, vector<ZObject*> target_l
 
 void ZBot::GiveOutOrders_3(vector<ZObject*> &units_list, vector<ZObject*> &targets_list) {
 	//set orig lists
-	for (vector<ZObject*>::iterator u = units_list.begin(); u != units_list.end(); u++)
+	for (vector<ZObject*>::iterator u = units_list.begin(); u != units_list.end(); u++) {
 		(*u)->GetAIOrigList() = (*u)->GetAIList();
+	}
 
 	while (units_list.size()) {
+
 		bool order_given = false;
 
 		for (vector<ZObject*>::iterator u = units_list.begin(); u != units_list.end();) {

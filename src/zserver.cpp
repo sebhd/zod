@@ -1103,7 +1103,7 @@ void ZServer::ProcessObjects() {
 
 		// ########## BEGIN Handle changed experience ###############
 		if ((*obj)->GetSFlags().updated_experience) {
-			UpdateObjectExperience((*obj));
+			RelayObjectExperience((*obj));
 		}
 		// ########## END Handle changed experience ###############
 
@@ -1233,7 +1233,7 @@ void ZServer::ProcessObjects() {
 	//if(whole_time > 0.1) printf("server process objects:: whole_time:%lf \t path_time:%lf \t delete_time:%lf \t process_time:%lf \t update_time:%lf\n", whole_time, path_time, delete_time, process_time, update_time);
 }
 
-void ZServer::UpdateObjectExperience(ZObject* obj) {
+void ZServer::RelayObjectExperience(ZObject* obj) {
 
 	if (!obj)
 		return;
@@ -1761,6 +1761,7 @@ void ZServer::UpdateObjectHealth(ZObject *obj, int attacker_ref_id) {
 	if (!obj)
 		return;
 
+	// If the object has already been destroyed...
 	if (obj->IsDestroyed() && !obj->HasProcessedDeath()) {
 		obj->SetHasProcessedDeath(true);
 
@@ -1768,20 +1769,25 @@ void ZServer::UpdateObjectHealth(ZObject *obj, int attacker_ref_id) {
 
 		// Give the killer experience for the kill:
 		if (killer) {
+			std::cout << "exp for killing " << obj->GetRefID() << std::endl;
 			killer->SetGroupExperience(killer->GetExperience() + 1);
+			RelayObjectExperience(killer);
 		}
 
+		// Tell clients about the object's death:
 		RelayObjectDeath(obj, attacker_ref_id);
 
 		CheckDestroyedFort(obj);
 		CheckDestroyedBridge(obj);
 		CheckNoUnitsDestroyFort(obj->GetOwner());
 
-	} else {
+	}
+	// Otherwise, send health update to the clients:
+	else {
 		RelayObjectHealth(obj);
 	}
 
-//if it is a building, then new state info needs to go out
+	//if it is a building, then new state info needs to go out
 	RelayBuildingState(obj);
 }
 
@@ -4420,7 +4426,7 @@ void ZServer::handle_exit_vehicle_event(ZServer *p, char *data, int size, int pl
 
 					// Set experience:
 					leader->SetExperience(driver_i->experience);
-					p->UpdateObjectExperience(leader);
+					p->RelayObjectExperience(leader);
 
 				}
 
@@ -4447,7 +4453,7 @@ void ZServer::handle_exit_vehicle_event(ZServer *p, char *data, int size, int pl
 
 					// Set experience:
 					(*iter_minion)->SetExperience(driver_i->experience);
-					p->UpdateObjectExperience((*iter_minion));
+					p->RelayObjectExperience((*iter_minion));
 
 					//just left cannon?
 					if (ot == CANNON_OBJECT || true) {

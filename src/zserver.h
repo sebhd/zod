@@ -139,7 +139,7 @@ class ZServer : public ZCore
 		void RelayObjectBuildingQueue(ZObject *obj, int player = -1);
 		void RelayObjectGroupInfo(ZObject *obj, int player = -1);
 		void RelayVersion(int player = -1);
-		void UpdateObjectExperience(ZObject* obj);
+		void RelayObjectExperience(ZObject* obj);
 		
 		string map_name;
 		string map_list_name;

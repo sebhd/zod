@@ -235,7 +235,7 @@ void ZVehicle::SignalLidShouldClose() {
 
 	if (lid_open && !do_close_lid) {
 		do_close_lid = true;
-		//next_close_lid_time = the_time + (0.1 * (rand() % 15));
+
 
 		next_close_lid_time = the_time + lid_open_time_min + lid_open_time_delay * ((rand() % 10000) / 10000.0);
 	}

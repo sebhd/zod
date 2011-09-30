@@ -628,7 +628,7 @@ ZObject* ZCore::MakeNewObject(int health_percent, char blevel, int refId, int x,
 			building->SetBuildList(&buildlist);
 		}
 
-		new_object_ptr->SetGameCore(this);
+	//	new_object_ptr->SetGameCore(this);
 		new_object_ptr->SetConnectedZone(zmap);
 		new_object_ptr->SetUnitLimitReachedList(unit_limit_reached);
 
@@ -642,7 +642,7 @@ ZObject* ZCore::MakeNewObject(int health_percent, char blevel, int refId, int x,
 		}
 
 		new_object_ptr->SetMap(&zmap);
-		new_object_ptr->SetMapImpassables(zmap);
+
 		new_object_ptr->SetHealthPercent(health_percent, zmap); // Pasted in from ZServer
 		new_object_ptr->InitRealMoveSpeed(zmap); // Pasted in from ZServer
 

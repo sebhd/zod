@@ -47,6 +47,7 @@ class ZBuilding : public ZObject
 		virtual void CreateBuildingStateData(char *&data, int &size);
 		virtual void ProcessSetBuildingStateData(char *data, int size);
 		virtual bool StopBuildingProduction(bool clear_queue_list = true);
+
 		double PercentageProduced(double &the_time);
 		double ProductionTimeLeft(double &the_time);
 		virtual bool GetBuildingCreationPoint(int &x, int &y);

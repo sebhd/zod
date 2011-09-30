@@ -255,7 +255,7 @@ void VAPC::ResetDamageInfo() {
 	//damage_chance = 0;
 	damage_int_time = 0;
 	damage_is_missile = false;
-	damage_radius = 0;
+	//damage_radius = 0;
 	missile_speed = 0;
 	has_explosives = false;
 
@@ -271,7 +271,7 @@ void VAPC::ResetDamageInfo() {
 	//damage_chance = unit_settings.attack_damage_chance;
 
 	damage_int_time = unit_settings.attack_speed;
-	damage_radius = unit_settings.attack_damage_radius;
+	//damage_radius = unit_settings.attack_damage_radius;
 	missile_speed = unit_settings.attack_missile_speed;
 
 	if (driver_type == TOUGH) {

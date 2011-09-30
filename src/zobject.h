@@ -1,6 +1,9 @@
 #ifndef _ZOBJECT_H_
 #define _ZOBJECT_H_
 
+//#include "zcore.h"
+
+
 
 #include "constants.h"
 #include "common.h"
@@ -65,7 +68,7 @@ class ZRobot;
 #include <SDL/SDL.h>
 #include <SDL/SDL_image.h>
 
-class ZCore;
+
 
 using namespace std;
 
@@ -312,8 +315,16 @@ public:
 	}
 };
 
+//class ZCore;
+
 class ZObject {
+
+
 public:
+	bool do_auto_repair;
+	double next_auto_repair_time;
+
+
 	ZObject(ZTime *ztime_, ZSettings *zsettings_ = NULL);
 	virtual ~ZObject();
 
@@ -349,7 +360,8 @@ public:
 	virtual void DoRender(ZMap &the_map, SDL_Surface *dest, int shift_x = 0, int shift_y = 0);
 	virtual void DoAfterEffects(ZMap &the_map, SDL_Surface *dest, int shift_x = 0, int shift_y = 0);
 	void SetDirection(int direction_);
-	ZSDL_Surface &CreateHoverNameImages(bool force_update = false);
+	ZSDL_Surface &CreateHoverNameImages();
+	void ForceHoverNameImageUpdate() { hover_name_star_img.Unload(); hover_name_img.Unload(); }
 	virtual void PlaySelectedWav();
 	virtual void PlaySelectedAnim(ZPortrait &portrait);
 	virtual void PlayAcknowledgeWav();
@@ -403,7 +415,7 @@ public:
 	virtual unsigned short GetExtraLinks();
 	void DoHitEffect();
 	virtual void DoCraneAnim(bool on_, ZObject *rep_obj = NULL);
-	virtual void DoRepairBuildingAnim(bool on_, double remaining_time_);
+	//virtual void DoRepairBuildingAnim(bool on_, double remaining_time_);
 	virtual bool CanBeRepaired();
 	virtual bool CanRepairUnit(int units_team);
 	virtual bool RepairingAUnit();
@@ -413,7 +425,8 @@ public:
 
 	virtual bool CanSnipe();
 
-	void SetGameCore(ZCore* core) { gameCore = core; }
+	// TODO 3: Implement reference to ZCore
+//	void SetGameCore(ZCore* core) { gameCore = core; }
 
 	bool HasProcessedDeath();
 	void SetHasProcessedDeath(bool processed_death_);
@@ -511,7 +524,7 @@ public:
 	int DamageHealth(int damage_amount, ZMap &tmap);
 
 	virtual void DoDeathEffect(bool do_fire_death, bool do_missile_death);
-	virtual void DoReviveEffect();
+	//virtual void DoReviveEffect();
 	virtual bool IsDestroyed();
 	bool WithinAgroRadius(int ox, int oy);
 	bool WithinAgroRadius(ZObject *obj);
@@ -530,7 +543,10 @@ public:
 	void SmoothMove(double &the_time);
 
 	static string GetHoverName(unsigned char ot, unsigned char oid);
+
+	// was static
 	static ZSDL_Surface &GetHoverNameImgStatic(unsigned char ot, unsigned char oid);
+
 	virtual void ProcessSetBuildingStateData(char *data, int size);
 	virtual void ProcessSetBuiltCannonData(char *data, int size);
 	virtual bool GetBuildingCreationPoint(int &x, int &y);
@@ -575,7 +591,7 @@ public:
 	void ProcessPickupWP(vector<waypoint>::iterator &wp, double time_dif, bool is_new, ZOLists &ols, ZMap &tmap);
 	void ProcessEnterWP(vector<waypoint>::iterator &wp, double time_dif, bool is_new, ZOLists &ols, ZMap &tmap);
 	void ProcessEnterFortWP(vector<waypoint>::iterator &wp, double time_dif, bool is_new, ZOLists &ols, ZMap &tmap);
-	void ProcessCraneRepairWP(vector<waypoint>::iterator &wp, double time_dif, bool is_new, ZOLists &ols, ZMap &tmap);
+
 	void ProcessUnitRepairWP(vector<waypoint>::iterator &wp, double time_dif, bool is_new, ZOLists &ols, ZMap &tmap);
 	bool CheckAttackTo(vector<waypoint>::iterator &wp, ZOLists &ols);
 	void KillWP(vector<waypoint>::iterator &wp);
@@ -643,7 +659,7 @@ public:
 	virtual bool RemoveStoredCannon(unsigned char oid);
 	virtual bool HaveStoredCannon(unsigned char oid);
 	virtual int CannonsInZone(ZOLists &ols);
-	virtual vector<unsigned char> &GetBuiltCannonList();
+
 	bool DoAutoRepair(ZMap &tmap, ZOLists &ols);
 	void StopAutoRepair();
 	bool HasDestroyedFortInZone(ZOLists &ols);
@@ -735,7 +751,11 @@ protected:
 	int width, height;
 	int width_pix, height_pix;
 	team_type owner;
+
+	// String representation of the class name:
 	string object_name;
+	string hover_name;
+
 	int mode;
 	int direction;
 	unsigned char m_object_type;
@@ -751,8 +771,9 @@ protected:
 	vector<waypoint> rallypoint_list;
 	ZCursor waypoint_cursor;
 	waypoint_information cur_wp_info;
+
 	int group_num;
-	string hover_name;
+
 	ZSDL_Surface hover_name_img;
 	ZSDL_Surface hover_name_star_img;
 	double radius_i;
@@ -769,7 +790,7 @@ protected:
 	bool attacked_by_explosives;
 	bool do_hit_effect;
 
-	ZCore* gameCore;
+	//ZCore* gameCore;
 
 	bool can_snipe;
 
@@ -777,6 +798,7 @@ protected:
 
 	double last_damaged_by_fire_time;
 	double last_damaged_by_missile_time;
+	double last_experience_gain_time;
 	bool just_disembarked;
 	int initial_health_percent;
 	double next_drop_track_time;
@@ -793,7 +815,7 @@ protected:
 
 	int damage;
 	bool damage_is_missile;
-	int damage_radius;
+	//int damage_radius;
 	int missile_speed;
 	int attack_radius;
 
@@ -810,8 +832,6 @@ protected:
 	vector<ZObject*> ai_list;
 	vector<ZObject*> ai_orig_list;
 
-	bool do_auto_repair;
-	double next_auto_repair_time;
 
 	friend bool sort_objects_func(ZObject *a, ZObject *b);
 };

@@ -846,7 +846,6 @@ int ZPlayer::Load_Graphics(void *p) {
 	return 1;
 }
 
-
 void ZPlayer::MissileObjectParticles(int x_, int y_, int radius, int particles) {
 	radius *= 0.8;
 
@@ -984,7 +983,6 @@ void ZPlayer::ProcessResetGame() {
 	client_socket.SendMessage(REQUEST_MAP, NULL, 0);
 }
 
-// TODO 4: Merge this from ZPlayer and ZBot zo ZClient::Run() and make difference a virtual overloaded method
 void ZPlayer::Run() {
 
 	while (allow_run) {
@@ -1112,8 +1110,8 @@ void ZPlayer::SetupSelectionImages() {
 
 		//selection_img[t] = SDL_CreateRGBSurface(SDL_HWSURFACE | SDL_SRCALPHA, 4, 4, 32, 0xFF000000, 0x0000FF00, 0x00FF0000, 0x000000FF);
 		selection_img[t].LoadBaseImage(
-				SDL_CreateRGBSurface(SDL_HWSURFACE | SDL_SRCALPHA, 4, 4, 32, 0xFF000000, 0x0000FF00, 0x00FF0000
-						, 0x000000FF));
+				SDL_CreateRGBSurface(SDL_HWSURFACE | SDL_SRCALPHA, 4, 4, 32, 0xFF000000, 0x0000FF00, 0x00FF0000,
+						0x000000FF));
 		//SDL_FillRect(selection_img[t], &the_box, SDL_MapRGB(selection_img[t]->format, r, g, b));
 		ZSDL_FillRect(&the_box, r, g, b, &selection_img[t]);
 	}
@@ -2998,8 +2996,7 @@ void ZPlayer::SetAsciiState(int c, bool is_down) {
 
 	if (c < 0)
 		return;
-	if (c >= ASCII_DOWN_MAX
-	)
+	if (c >= ASCII_DOWN_MAX)
 		return;
 
 	ascii_down[c] = is_down;
@@ -3010,8 +3007,7 @@ bool ZPlayer::AsciiDown(int c) {
 
 	if (c < 0)
 		return false;
-	if (c >= ASCII_DOWN_MAX
-	)
+	if (c >= ASCII_DOWN_MAX)
 		return false;
 
 	return ascii_down[c];
@@ -3030,11 +3026,9 @@ bool ZPlayer::AltDown() {
 }
 
 bool ZPlayer::IsOverHUD(int x, int y, int w, int h) {
-	if (x + w >= init_w - HUD_WIDTH
-	)
+	if (x + w >= init_w - HUD_WIDTH)
 		return true;
-	if (y + h >= init_h - HUD_HEIGHT
-	)
+	if (y + h >= init_h - HUD_HEIGHT)
 		return true;
 
 	return false;
@@ -3813,8 +3807,7 @@ void ZPlayer::AddSpaceBarEvent(SpaceBarEvent new_event) {
 
 	space_event_list.insert(space_event_list.begin(), new_event);
 
-	if (space_event_list.size() >= MAX_STORED_SPACE_BAR_EVENTS
-	)
+	if (space_event_list.size() >= MAX_STORED_SPACE_BAR_EVENTS)
 		space_event_list.resize(MAX_STORED_SPACE_BAR_EVENTS);
 }
 
@@ -3893,7 +3886,6 @@ bool ZPlayer::ObjectMakeGuiWindow(ZObject *obj) {
 	return true;
 }
 
-
 void ZPlayer::add_new_object_event(char *data, int size, int dummy) {
 
 	ZObject* obj = ProcessNewObject(data, size);
@@ -3925,17 +3917,16 @@ void ZPlayer::add_new_object_event(char *data, int size, int dummy) {
 	ProcessChangeObjectAmount();
 }
 
-
 void ZPlayer::connect_event(char *data, int size, int dummy) {
 	ProcessConnect();
 	SendLogin();
 }
 
 /*
-void ZPlayer::delete_object_event(char *data, int size, int dummy) {
-	ZObject *obj = ProcessDeleteObject(data, size);
-}
-*/
+ void ZPlayer::delete_object_event(char *data, int size, int dummy) {
+ ZObject *obj = ProcessDeleteObject(data, size);
+ }
+ */
 
 void ZPlayer::destroy_object_event(char *data, int size, int dummy) {
 	destroy_object_packet *pi = (destroy_object_packet*) data;
@@ -4196,8 +4187,6 @@ void ZPlayer::driver_hit_effect_event(char *data, int size, int dummy) {
 	}
 }
 
-
-
 void ZPlayer::fire_object_missile_event(char *data, int size, int dummy) {
 	ProcessFireMissile(data, size);
 }
@@ -4457,11 +4446,9 @@ void ZPlayer::lunclick_event(char *data, int size, int dummy) {
 
 		if (DoPlaceCannon()) {
 
-		}
-		else if (GuiAbsorbLUnClick()) {
+		} else if (GuiAbsorbLUnClick()) {
 
-		}
-		else if (lbutton.started_over_gui && zcomp_msg.AbsorbedLUnClick(mouse_x, mouse_y, zmap)) {
+		} else if (lbutton.started_over_gui && zcomp_msg.AbsorbedLUnClick(mouse_x, mouse_y, zmap)) {
 
 			if (zcomp_msg.GetFlags().resume_game) {
 				SendSetPaused(false);
@@ -4574,8 +4561,7 @@ void ZPlayer::motion_event(char *data, int size, int dummy) {
 
 	//are we over the map?
 	//if(mouse_x < screen->w - HUD_WIDTH && mouse_y < screen->h - HUD_HEIGHT)
-	if (mouse_x < init_w - HUD_WIDTH && mouse_y < init_h - HUD_HEIGHT)
-	{
+	if (mouse_x < init_w - HUD_WIDTH && mouse_y < init_h - HUD_HEIGHT) {
 		int shift_x, shift_y;
 		int map_x, map_y;
 		vector<ZObject*>::iterator i;
@@ -4622,7 +4608,6 @@ void ZPlayer::motion_event(char *data, int size, int dummy) {
 	//a better place can be found
 	DetermineCursor();
 }
-
 
 void ZPlayer::munclick_event(char *data, int size, int dummy) {
 	mbutton.down = false;
@@ -4684,8 +4669,7 @@ void ZPlayer::request_version_event(char *data, int size, int dummy) {
 	version_packet packet;
 
 	//check
-	if (strlen(GAME_VERSION) + 1 >= MAX_VERSION_PACKET_CHARS)
-	{
+	if (strlen(GAME_VERSION) + 1 >= MAX_VERSION_PACKET_CHARS) {
 		printf("ZPlayer::request_version_event: '%s' too large to fit in a %d char array\n", GAME_VERSION,
 				MAX_VERSION_PACKET_CHARS);
 		return;
@@ -4729,7 +4713,6 @@ void ZPlayer::resize_event(char *data, int size, int dummy) {
 
 // redraw_everything();
 }
-
 
 void ZPlayer::runclick_event(char *data, int size, int dummy) {
 	rbutton.down = false;
@@ -4775,7 +4758,6 @@ void ZPlayer::runclick_event(char *data, int size, int dummy) {
 	}
 }
 
-
 void ZPlayer::set_computer_message_event(char *data, int size, int dummy) {
 	computer_msg_packet *pi = (computer_msg_packet*) data;
 
@@ -4815,7 +4797,6 @@ void ZPlayer::set_computer_message_event(char *data, int size, int dummy) {
 	}
 }
 
-
 void ZPlayer::set_grenade_amount_event(char *data, int size, int dummy) {
 	ZObject *obj = ProcessSetGrenadeState(data, size);
 
@@ -4828,7 +4809,6 @@ void ZPlayer::set_grenade_amount_event(char *data, int size, int dummy) {
 	if (select_info.UpdateGroupMember(obj))
 		DetermineCursor();
 }
-
 
 void ZPlayer::set_object_attack_object_event(char *data, int size, int dummy) {
 	ZObject *obj = ProcessObjectAttackObject(data, size);
@@ -4851,7 +4831,6 @@ void ZPlayer::set_object_attack_object_event(char *data, int size, int dummy) {
 	}
 }
 
-
 void ZPlayer::set_object_health_event(char *data, int size, int dummy) {
 	ZObject *obj = ProcessObjectHealthTeam(data, size);
 
@@ -4860,7 +4839,6 @@ void ZPlayer::set_object_health_event(char *data, int size, int dummy) {
 
 	obj->DoHitEffect();
 }
-
 
 void ZPlayer::set_object_team_event(char *data, int size, int dummy) {
 	ZObject *obj = ProcessObjectTeam(data, size);
@@ -4884,8 +4862,6 @@ void ZPlayer::set_object_waypoints_event(char *data, int size, int dummy) {
 	our_object->ShowWaypoints();
 }
 
-
-
 void ZPlayer::set_player_voteinfo_event(char *data, int size, int dummy) {
 	ProcessSetLPlayerVoteInfo(data, size);
 
@@ -4896,8 +4872,6 @@ void ZPlayer::set_player_voteinfo_event(char *data, int size, int dummy) {
 	}
 	//zvote.SetupImages(OurPInfo().voting_power, VotesNeeded(), VotesFor(), VotesAgainst(), VoteAppendDescription());
 }
-
-
 
 void ZPlayer::set_regkey(char *data, int size, int dummy) {
 	buy_registration_packet *pi = (buy_registration_packet*) data;
@@ -4930,15 +4904,13 @@ void ZPlayer::set_regkey(char *data, int size, int dummy) {
 
 		//are we registered now?
 		if (!CheckRegistration()) {
-			AddNewsEntry(
-					"new registration key bought but we still are not registered! please visit www.nighsoft.com");
+			AddNewsEntry("new registration key bought but we still are not registered! please visit www.nighsoft.com");
 			return;
 		} else {
 			AddNewsEntry("congratulations the zod engine is now registered");
 		}
 	}
 }
-
 
 void ZPlayer::set_repair_building_anim_event(char *data, int size, int dummy) {
 	repair_building_anim_packet *pi = (repair_building_anim_packet*) data;
@@ -4953,25 +4925,30 @@ void ZPlayer::set_repair_building_anim_event(char *data, int size, int dummy) {
 	if (!obj)
 		return;
 
-	obj->DoRepairBuildingAnim(pi->on, pi->remaining_time);
+	BRepair* building = dynamic_cast<BRepair*>(obj);
 
-	if (pi->play_sound && obj->GetOwner() == our_team) {
-		if (pi->on)
-			ZSoundEngine::PlayWav(COMP_STARTING_REPAIR_SND);
-		else {
-			ZSoundEngine::PlayWav(COMP_VEHICLE_REPAIRED_SND);
+	if (building) {
 
-			//store space bar event
-			AddSpaceBarEvent(SpaceBarEvent(pi->ref_id));
+		building->DoRepairBuildingAnim(pi->on, pi->remaining_time);
+
+		if (pi->play_sound && obj->GetOwner() == our_team) {
+			if (pi->on)
+				ZSoundEngine::PlayWav(COMP_STARTING_REPAIR_SND);
+			else {
+				ZSoundEngine::PlayWav(COMP_VEHICLE_REPAIRED_SND);
+
+				//store space bar event
+				AddSpaceBarEvent(SpaceBarEvent(pi->ref_id));
+			}
 		}
 	}
 }
 
 /*
-void ZPlayer::set_settings_event(char *data, int size, int dummy) {
-	ProcessZSettings(data, size);
-}
-*/
+ void ZPlayer::set_settings_event(char *data, int size, int dummy) {
+ ProcessZSettings(data, size);
+ }
+ */
 
 void ZPlayer::set_vote_info_event(char *data, int size, int dummy) {
 	ProcessVoteInfo(data, size);
@@ -4983,8 +4960,6 @@ void ZPlayer::set_vote_info_event(char *data, int size, int dummy) {
 	}
 	//zvote.SetupImages(OurPInfo().voting_power, VotesNeeded(), VotesFor(), VotesAgainst(), VoteAppendDescription());
 }
-
-
 
 void ZPlayer::snipe_object_event(char *data, int size, int dummy) {
 	snipe_object_packet *pi = (snipe_object_packet*) data;

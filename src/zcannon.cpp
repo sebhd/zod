@@ -28,8 +28,5 @@ void ZCannon::Init() {
 }
 
 bool ZCannon::CanBeSniped() {
-
-	// TODO 3: Understand why we need ejectable here
 	return can_be_sniped && driver_info.size();
-	//return can_be_sniped && driver_info.size() && ejectable;
 }

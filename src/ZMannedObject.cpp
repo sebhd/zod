@@ -5,8 +5,7 @@
 #include "rgrunt.h"
 #include <iostream>
 
-ZMannedObject::ZMannedObject(ZTime *ztime_, ZSettings *zsettings_) :
-		ZObject(ztime_, zsettings_) {
+ZMannedObject::ZMannedObject(ZTime *ztime_, ZSettings *zsettings_) : ZObject(ztime_, zsettings_) {
 
 	display_health_bar = true;
 	driver_type = GRUNT;
@@ -214,6 +213,13 @@ void ZMannedObject::SetEjectable(bool ejectable_) {
 }
 
 void ZMannedObject::SetExperience(unsigned char exp) {
+
+	if (last_experience_gain_time + 10 > ztime->ztime) {
+		std::cout << "Last experience gain was not long ago" << std::endl;
+		return;
+	}
+
+	last_experience_gain_time = ztime->ztime;
 
 
 	if (exp < 0)
